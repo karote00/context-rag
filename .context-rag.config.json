@@ -1,0 +1,32 @@
+{
+  "index": {
+    "include": [
+      "docs/",
+      "README.md",
+      "*.md"
+    ],
+    "exclude": [
+      "node_modules/",
+      ".git/",
+      "dist/",
+      "build/"
+    ]
+  },
+  "embedder": {
+    "type": "python",
+    "model": "sentence-transformers/all-MiniLM-L6-v2"
+  },
+  "search": {
+    "engine": "rust",
+    "top_k": 5
+  },
+  "storage": {
+    "type": "sqlite",
+    "path": ".context-rag/index.db"
+  },
+  "cache": {
+    "enabled": true,
+    "branch_aware": true,
+    "max_size": "1GB"
+  }
+}
