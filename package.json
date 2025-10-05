@@ -12,16 +12,8 @@
     "test": "vitest"
   },
   "keywords": ["rag", "cli", "semantic-search", "ai", "context", "retrieval-augmented-generation", "branch-aware", "offline"],
-  "author": "",
+  "author": "karoteglathe",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/yourusername/context-rag.git"
-  },
-  "bugs": {
-    "url": "https://github.com/yourusername/context-rag/issues"
-  },
-  "homepage": "https://github.com/yourusername/context-rag#readme",
   "engines": {
     "node": ">=14.0.0"
   },
