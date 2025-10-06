@@ -4,6 +4,7 @@ const chalk = require('chalk');
 const { EmbeddingService } = require('./embedder');
 const { GitService } = require('./git');
 const { ContextService } = require('./context');
+const { ContextMerger } = require('./merger');
 
 class SearchService {
   constructor(config) {
@@ -11,11 +12,25 @@ class SearchService {
     this.embeddingService = new EmbeddingService(config);
     this.gitService = new GitService(config);
     this.contextService = new ContextService(config);
+    this.contextMerger = new ContextMerger(config, this.gitService);
     this.indexData = null;
   }
 
   async loadIndex() {
-    // Use branch-aware cache path
+    const currentBranch = await this.gitService.getCurrentBranch();
+    
+    // Try to create a merged view if we're on a feature branch
+    if (currentBranch && currentBranch !== 'main' && currentBranch !== 'master') {
+      const mergedContext = await this.contextMerger.mergeContexts('main', currentBranch);
+      
+      if (mergedContext) {
+        console.log(chalk.blue(`🔄 Using merged context view (${mergedContext.stats.totalChunks} chunks)`));
+        this.indexData = mergedContext.data;
+        return;
+      }
+    }
+    
+    // Fallback to branch-specific cache
     const branchCachePath = await this.gitService.getBranchCachePath();
     
     if (!fs.existsSync(branchCachePath)) {
@@ -41,7 +56,6 @@ class SearchService {
         });
       }
       
-      const currentBranch = await this.gitService.getCurrentBranch();
       const branchInfo = currentBranch ? ` (branch: ${currentBranch})` : '';
       console.log(chalk.gray(`📋 Loaded index with ${this.indexData.chunks.length} chunks${branchInfo}`));
       
