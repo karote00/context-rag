@@ -9,7 +9,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node src/index.js",
-    "test": "vitest"
+    "test": "vitest",
+    "test:run": "vitest --run",
+    "test:coverage": "vitest --coverage"
   },
   "keywords": ["rag", "cli", "semantic-search", "ai", "context", "retrieval-augmented-generation", "branch-aware", "offline"],
   "author": "karoteglathe",
