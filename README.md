@@ -128,7 +128,9 @@ For a complete walkthrough, see the [Quick Start Guide](./docs/quick-start.md).
 ### For Everyone
 - [Quick Start Guide](./docs/quick-start.md) - Get started in minutes  
 - [Installation Guide](./docs/installation.md) - Setup and dependencies
+- [Configuration Reference](./docs/configuration.md) - Complete configuration options
 - [API Reference](./docs/api.md) - Complete command and API documentation
+- [Plugin Development](./docs/plugins.md) - Creating custom transformers
 - [Token Efficiency Tools](./tools/README.md) - Measure your savings
 
 ## Development
