@@ -11,6 +11,7 @@ const CONFIG_FILE = '.context-rag.config.json';
 async function loadConfig() {
   try {
     if (!fs.existsSync(CONFIG_FILE)) {
+      console.log(chalk.yellow('⚠️  No configuration found. Run "context-rag init" first.'));
       return null;
     }
 
@@ -24,17 +25,37 @@ async function loadConfig() {
       'search.engine'
     ];
 
+    const missingFields = [];
     for (const field of requiredFields) {
       if (!getNestedValue(config, field)) {
-        throw new Error(`Missing required configuration field: ${field}`);
+        missingFields.push(field);
       }
+    }
+
+    if (missingFields.length > 0) {
+      console.error(chalk.red('❌ Configuration validation failed:'));
+      missingFields.forEach(field => {
+        console.error(chalk.red(`   Missing required field: ${field}`));
+      });
+      console.log(chalk.yellow('💡 Run "context-rag init" to regenerate configuration'));
+      return null;
+    }
+
+    // Validate cache directory exists
+    const cacheDir = path.dirname(config.storage.path);
+    if (!fs.existsSync(cacheDir)) {
+      fs.mkdirSync(cacheDir, { recursive: true });
+      console.log(chalk.green(`Created cache directory: ${cacheDir}`));
     }
 
     return config;
     
   } catch (error) {
     if (error instanceof SyntaxError) {
-      throw new Error(`Invalid JSON in configuration file: ${error.message}`);
+      console.error(chalk.red('❌ Invalid JSON in configuration file:'));
+      console.error(chalk.red(`   ${error.message}`));
+      console.log(chalk.yellow('💡 Check your .context-rag.config.json file'));
+      return null;
     }
     throw error;
   }
