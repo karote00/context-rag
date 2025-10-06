@@ -1,6 +1,7 @@
 const chalk = require('chalk');
 const { loadConfig } = require('../services/config');
 const { APIService } = require('../services/api');
+const { PluginManager } = require('../services/plugins');
 
 async function queryCommand(query, options = {}) {
   try {
@@ -11,6 +12,10 @@ async function queryCommand(query, options = {}) {
     }
 
     const topK = parseInt(options.topK) || config.search.top_k || 5;
+    
+    // Initialize plugin manager
+    const pluginManager = new PluginManager(config);
+    await pluginManager.loadPlugins();
     
     // Initialize API service
     const apiService = new APIService(config);
@@ -53,12 +58,49 @@ async function queryCommand(query, options = {}) {
       return;
     }
 
+    // Apply transformers if specified
+    let finalResult = apiResult;
+    
+    if (options.transform || options.format) {
+      let transformers = [];
+      
+      if (options.transform) {
+        transformers = options.transform.split(',').map(t => t.trim());
+      } else if (options.format) {
+        // Map format to transformer
+        const formatMap = {
+          'markdown': ['markdown'],
+          'summary': ['summary'],
+          'code': ['code'],
+          'context': ['context-extract']
+        };
+        transformers = formatMap[options.format] || [];
+      }
+      
+      if (transformers.length > 0) {
+        try {
+          const transformedResult = await pluginManager.transformResults(apiResult.results, transformers);
+          
+          if (options.json || options.format) {
+            console.log(JSON.stringify(transformedResult, null, 2));
+            return;
+          } else {
+            // For non-JSON output, we'll still show the original format
+            // but could enhance it based on transformers
+            finalResult = apiResult;
+          }
+        } catch (error) {
+          console.warn(chalk.yellow(`⚠️  Transformer failed: ${error.message}`));
+        }
+      }
+    }
+
     if (options.json) {
       // Full API response for JSON mode
-      console.log(JSON.stringify(apiResult, null, 2));
+      console.log(JSON.stringify(finalResult, null, 2));
     } else {
       // Human-friendly output
-      const results = apiResult.results;
+      const results = finalResult.results;
       console.log(chalk.green(`\n📋 Found ${results.length} relevant results:\n`));
       
       results.forEach((result, index) => {

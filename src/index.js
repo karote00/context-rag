@@ -35,6 +35,8 @@ program
   .description('Search project context using natural language')
   .option('-k, --top-k <number>', 'Number of results to return', '5')
   .option('--json', 'Output results in JSON format')
+  .option('-t, --transform <transformers>', 'Apply result transformers (comma-separated)')
+  .option('--format <format>', 'Output format: json, markdown, summary, code')
   .action(queryCommand);
 
 // Watch command
@@ -64,6 +66,13 @@ program
   .description('Query with AI-optimized output format')
   .option('-k, --top-k <number>', 'Number of results to return', '5')
   .action(require('./cli/ai'));
+
+// Plugins command
+program
+  .command('plugins')
+  .description('Manage result transformer plugins')
+  .option('-l, --list', 'List available transformers')
+  .action(require('./cli/plugins'));
 
 // Error handling
 program.on('command:*', () => {
