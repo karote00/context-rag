@@ -51,6 +51,20 @@ program
   .option('-c, --clear <branch>', 'Clear cache for specific branch')
   .action(branchCommand);
 
+// Status command
+program
+  .command('status')
+  .description('Show index and context status')
+  .option('--json', 'Output in JSON format')
+  .action(require('./cli/status'));
+
+// AI command for AI integration
+program
+  .command('ai <query>')
+  .description('Query with AI-optimized output format')
+  .option('-k, --top-k <number>', 'Number of results to return', '5')
+  .action(require('./cli/ai'));
+
 // Error handling
 program.on('command:*', () => {
   console.error(chalk.red(`Invalid command: ${program.args.join(' ')}`));
