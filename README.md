@@ -10,6 +10,7 @@ A lightweight CLI tool for semantic search (RAG) on project context, with branch
 - **🔄 Iterative Context Discovery**: Multi-pass expanded search finds related context automatically
 - **🌿 Branch-Aware Caching**: Automatic git branch detection with smart cache merging
 - **🤖 AI Integration**: Perfect context formatting for ChatGPT, Claude, Gemini, and any AI service
+- **🔗 Agent-Ready**: Built-in workflow for AI agents to gather context before responding
 - **🎯 Context Filtering**: Smart selection of relevant code/docs instead of dumping entire files
 - **🔧 Multi-Language Support**: Node.js core with Rust indexing and Python embeddings
 - **🔌 Plugin System**: Extensible transformers and embedders (OpenAI, RustBert examples included)
@@ -134,6 +135,7 @@ For a complete walkthrough, see the [Quick Start Guide](./docs/quick-start.md).
 - [Configuration Reference](./docs/configuration.md) - Complete configuration options
 - [API Reference](./docs/api.md) - Complete command and API documentation
 - [Expanded Search Guide](./docs/expanded-search.md) - Multi-pass context discovery
+- [AI Agent Integration](./AGENTS.md) - How AI agents should use context-rag
 - [Plugin Development](./docs/plugins.md) - Creating custom transformers
 - [Token Efficiency Tools](./tools/README.md) - Measure your savings
 
