@@ -22,7 +22,13 @@ When you run `context-rag init`, this default configuration is created:
   },
   "search": {
     "engine": "rust",
-    "top_k": 5
+    "top_k": 5,
+    "expanded_search": {
+      "enabled": false,
+      "max_passes": 3,
+      "enable_code_references": true,
+      "enable_co_occurrence": true
+    }
   },
   "storage": {
     "type": "sqlite",
@@ -118,6 +124,30 @@ Default number of results to return for queries.
 - `5` - Good balance (default)
 - `3` - Fewer, more focused results
 - `10` - More comprehensive results
+
+#### `expanded_search` (Object)
+Configuration for multi-pass context discovery.
+
+**Options:**
+- `enabled` (Boolean) - Enable expanded search by default (default: `false`)
+- `max_passes` (Number) - Maximum search passes (default: `3`)
+- `enable_code_references` (Boolean) - Extract function/class references (default: `true`)
+- `enable_co_occurrence` (Boolean) - Use co-occurrence patterns (default: `true`)
+
+**Example:**
+```json
+"expanded_search": {
+  "enabled": true,
+  "max_passes": 3,
+  "enable_code_references": true,
+  "enable_co_occurrence": true
+}
+```
+
+When enabled, queries automatically use multi-pass search to discover related context through:
+- Code references (function calls, imports, class names)
+- Pattern-based expansion rules (UI events, API patterns, etc.)
+- Co-occurrence analysis for related terms
 
 ### `storage` Section
 

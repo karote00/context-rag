@@ -2,6 +2,7 @@ const chalk = require('chalk');
 const { loadConfig } = require('../services/config');
 const { APIService } = require('../services/api');
 const { PluginManager } = require('../services/plugins');
+const { ExpandedSearchService } = require('../services/expanded-search');
 
 async function queryCommand(query, options = {}) {
   try {
@@ -17,8 +18,9 @@ async function queryCommand(query, options = {}) {
     const pluginManager = new PluginManager(config);
     await pluginManager.loadPlugins();
     
-    // Initialize API service
+    // Initialize services
     const apiService = new APIService(config);
+    const expandedSearchService = new ExpandedSearchService(config);
     
     // Check if index exists
     const indexStatus = await apiService.getIndexStatus();
@@ -36,8 +38,38 @@ async function queryCommand(query, options = {}) {
       process.exit(1);
     }
     
-    // Perform search via API
-    const apiResult = await apiService.query(query, { topK });
+    // Perform search via API (with optional expansion)
+    let apiResult;
+    if (options.expand) {
+      console.log(chalk.blue('🔍 Using expanded search for better context discovery...'));
+      const maxPasses = parseInt(options.maxPasses) || 3;
+      
+      // Use expanded search service directly
+      try {
+        await expandedSearchService.generateEmbeddingsForIndex();
+      } catch (error) {
+        console.log(chalk.yellow(`⚠️  ${error.message}`));
+        console.log(chalk.gray('Run "context-rag index" to create an index first.'));
+        process.exit(1);
+      }
+      
+      const expandedResults = await expandedSearchService.expandedSearch(query, { 
+        topK, 
+        maxPasses 
+      });
+      
+      // Format as API result
+      apiResult = {
+        query,
+        results: expandedResults,
+        total_results: expandedResults.length,
+        search_options: { topK, expanded: true, maxPasses },
+        timestamp: new Date().toISOString(),
+        model: config.embedder.model
+      };
+    } else {
+      apiResult = await apiService.query(query, { topK });
+    }
     
     if (apiResult.error) {
       if (options.json) {

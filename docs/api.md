@@ -37,6 +37,7 @@ context-rag query "authentication middleware"
 context-rag query "database connection" --json
 context-rag query "error handling" --format markdown
 context-rag query "API endpoints" --top-k 10
+context-rag query "drag resize element" --expand --max-passes 3
 ```
 
 **Arguments:**
@@ -47,6 +48,8 @@ context-rag query "API endpoints" --top-k 10
 - `--json` - Output results in JSON format
 - `-t, --transform <transformers>` - Apply result transformers (comma-separated)
 - `--format <format>` - Output format: json, markdown, summary, code
+- `--expand` - Use multi-pass expanded search for better context discovery
+- `--max-passes <number>` - Maximum search passes for expanded search (default: 3)
 
 ### `context-rag watch`
 
@@ -90,6 +93,7 @@ Query with AI-optimized output format.
 
 ```bash
 context-rag ai "explain the architecture"
+context-rag ai "authentication flow" --expand
 ```
 
 **Arguments:**
@@ -97,6 +101,7 @@ context-rag ai "explain the architecture"
 
 **Options:**
 - `-k, --top-k <number>` - Number of results to return (default: 5)
+- `--expand` - Use multi-pass expanded search for comprehensive context
 
 ### `context-rag plugins`
 
@@ -241,7 +246,13 @@ context-rag plugins --list           # List available transformers
   },
   "search": {
     "engine": "rust",
-    "top_k": 5
+    "top_k": 5,
+    "expanded_search": {
+      "enabled": false,
+      "max_passes": 3,
+      "enable_code_references": true,
+      "enable_co_occurrence": true
+    }
   },
   "storage": {
     "type": "sqlite",

@@ -7,6 +7,7 @@ A lightweight CLI tool for semantic search (RAG) on project context, with branch
 ## Features
 
 - **🔍 Semantic Search**: Intelligent context filtering that saves 80-95% of AI tokens
+- **🔄 Iterative Context Discovery**: Multi-pass expanded search finds related context automatically
 - **🌿 Branch-Aware Caching**: Automatic git branch detection with smart cache merging
 - **🤖 AI Integration**: Perfect context formatting for ChatGPT, Claude, Gemini, and any AI service
 - **🎯 Context Filtering**: Smart selection of relevant code/docs instead of dumping entire files
@@ -41,7 +42,8 @@ context-rag index --force           # Force rebuild
 context-rag query "authentication middleware"
 context-rag query "database schema" --json
 context-rag query "error handling" --format markdown
-context-rag ai "how do I add user registration?"  # Perfect for AI tools
+context-rag query "drag resize element" --expand    # Multi-pass context discovery
+context-rag ai "how do I add user registration?"    # Perfect for AI tools
 ```
 
 ### Project Management
@@ -112,6 +114,7 @@ context-rag index
 context-rag query "authentication middleware"
 context-rag query "database connection" --json
 context-rag query "error handling" --format markdown
+context-rag query "drag resize element" --expand  # Multi-pass discovery
 ```
 
 For a complete walkthrough, see the [Quick Start Guide](./docs/quick-start.md).
@@ -130,6 +133,7 @@ For a complete walkthrough, see the [Quick Start Guide](./docs/quick-start.md).
 - [Installation Guide](./docs/installation.md) - Setup and dependencies
 - [Configuration Reference](./docs/configuration.md) - Complete configuration options
 - [API Reference](./docs/api.md) - Complete command and API documentation
+- [Expanded Search Guide](./docs/expanded-search.md) - Multi-pass context discovery
 - [Plugin Development](./docs/plugins.md) - Creating custom transformers
 - [Token Efficiency Tools](./tools/README.md) - Measure your savings
 

@@ -37,6 +37,8 @@ program
   .option('--json', 'Output results in JSON format')
   .option('-t, --transform <transformers>', 'Apply result transformers (comma-separated)')
   .option('--format <format>', 'Output format: json, markdown, summary, code')
+  .option('--expand', 'Use multi-pass expanded search for better context discovery')
+  .option('--max-passes <number>', 'Maximum search passes for expanded search', '3')
   .action(queryCommand);
 
 // Watch command
@@ -65,6 +67,7 @@ program
   .command('ai <query>')
   .description('Query with AI-optimized output format')
   .option('-k, --top-k <number>', 'Number of results to return', '5')
+  .option('--expand', 'Use multi-pass expanded search for comprehensive context')
   .action(require('./cli/ai'));
 
 // Plugins command
