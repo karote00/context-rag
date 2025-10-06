@@ -1,6 +1,6 @@
 {
   "name": "context-rag",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A lightweight CLI tool for semantic search (RAG) on project context, with branch-aware caching and AI integration.",
   "main": "src/index.js",
   "bin": {
@@ -22,6 +22,9 @@
   "files": [
     "src/",
     "bin/",
+    "python/",
+    "plugins/",
+    "docs/",
     "README.md",
     "LICENSE"
   ],

@@ -21,7 +21,7 @@ A lightweight CLI tool for semantic search (RAG) on project context, with branch
 npm install -g context-rag
 ```
 
-> Note: Rust engine and Python embedder will require additional dependencies when implemented in later phases.
+For detailed installation instructions including Python and Rust dependencies, see the [Installation Guide](./docs/installation.md).
 
 ---
 
@@ -105,29 +105,62 @@ context-rag follows a phased development workflow (see `.kiro/specs/context-rag/
 
 ---
 
-## Current Commands
-
-All commands are functional with the CLI framework in place:
+## Quick Start
 
 ```bash
-context-rag --help                    # Show all available commands
-context-rag init                      # Initialize configuration
-context-rag index [path]              # Build semantic index (placeholder)
-context-rag query <query> [options]   # Search project context (placeholder)
-context-rag watch                     # Watch for file changes (placeholder)
-context-rag branch [options]          # Manage branch-specific caches (placeholder)
+# Install globally
+npm install -g context-rag
+
+# Initialize in your project
+cd your-project
+context-rag init
+
+# Build semantic index
+context-rag index
+
+# Search your codebase
+context-rag query "authentication middleware"
+context-rag query "database connection" --json
+context-rag query "error handling" --format markdown
 ```
+
+For a complete walkthrough, see the [Quick Start Guide](./docs/quick-start.md).
 
 ---
 
-## Contribution Guidelines
+## Documentation
+
+- [Installation Guide](./docs/installation.md) - Setup and dependencies
+- [Quick Start Guide](./docs/quick-start.md) - Get started in minutes  
+- [API Reference](./docs/api.md) - Complete command and API documentation
+- [Configuration](./docs/configuration.md) - Configuration options
+- [Plugin Development](./docs/plugins.md) - Creating custom transformers
+
+## Development
+
+```bash
+# Clone and setup
+git clone https://github.com/yourusername/context-rag.git
+cd context-rag
+npm install
+
+# Run tests
+npm test
+
+# Run benchmarks
+npm run test test/performance/
+
+# Link for development
+npm link
+```
+
+## Contributing
 
 1. Fork the repository  
 2. Create a feature branch (`git checkout -b feature/xxx`)  
-3. Commit changes and open a PR  
-4. Follow the phased development approach outlined in the specs
-
----
+3. Add tests for new functionality
+4. Ensure all tests pass (`npm test`)
+5. Commit changes and open a PR
 
 ## License
 
