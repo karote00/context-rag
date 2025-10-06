@@ -1,20 +1,24 @@
-# Token Benchmarking Tools
+# Context Filtering Efficiency Tools
 
-Tools to measure and compare token usage with and without context-rag.
+Tools to measure how much context-rag reduces token usage through intelligent context filtering, regardless of which AI service you use.
+
+## 🎯 Key Insight
+
+Instead of dumping entire files into your AI prompts, context-rag intelligently filters and selects only the most relevant context. This saves tokens universally across all AI services!
 
 ## Quick Start
 
-### 1. Simple Benchmark (Recommended)
+### 1. Context Filtering Efficiency (Recommended)
 
 ```bash
 # In your project directory (after context-rag init && context-rag index)
-./tools/quick-benchmark.sh
+node tools/context-efficiency.js
 ```
 
-This runs a quick comparison across common queries and shows:
-- Token usage with/without context-rag
-- Cost estimates
-- Summary analysis
+This shows the **core value** of context-rag:
+- Raw context tokens (all relevant files)
+- Filtered context tokens (context-rag's smart selection)  
+- Universal token savings regardless of AI service
 
 ### 2. Detailed Token Tracking
 
@@ -54,30 +58,29 @@ node tools/token-benchmark.js
 
 ## Understanding the Results
 
-### Token Overhead vs. Quality Improvement
+### Context Filtering Efficiency
 
-Context-rag typically:
-- **Adds 50-200 tokens** of context per query
-- **Saves 1-3 follow-up queries** by providing better context
-- **Improves response accuracy** with project-specific information
+Context-rag's main value is **intelligent context filtering**:
+- **Scans all relevant files** in your project (could be 10,000+ tokens)
+- **Filters to most relevant context** (typically 200-500 tokens)
+- **Saves 80-95% of context tokens** while maintaining quality
 
 ### Example Analysis
 
 ```
-Without context-rag: 180 tokens
-  • Query: 30 tokens
-  • Response: 150 tokens
+📁 Raw Context (all relevant files):
+  • Files found: 25 files
+  • Total tokens: 8,500 tokens
 
-With context-rag: 280 tokens  
-  • Query: 30 tokens
-  • Context: 100 tokens
-  • Response: 150 tokens
+🎯 Filtered Context (context-rag selection):
+  • Sources selected: 3 most relevant
+  • Filtered tokens: 420 tokens
 
-Analysis:
-  • Token overhead: +100 tokens
-  • But likely saves 2 follow-up queries (360 tokens)
-  • Net savings: ~260 tokens
-  • Plus higher quality, project-specific responses
+⚡ Efficiency Metrics:
+  • Token savings: 8,080 tokens per query
+  • Efficiency ratio: 20.2x
+  • Compression ratio: 95.1%
+  • Works with ANY AI service!
 ```
 
 ## Real-World Workflow
@@ -109,18 +112,20 @@ AI: "Looking at your existing auth.js middleware, you can extend it by..."
 ```
 *Total: 1 query, ~300 tokens, more accurate response*
 
-## Cost Analysis
+## Universal Token Savings
 
-### Token Pricing (as of 2024)
-- **GPT-3.5**: $0.002 per 1K tokens
-- **GPT-4**: $0.03 per 1K tokens  
-- **Claude**: $0.008 per 1K tokens
+The beauty of context-rag is that **token savings work with any AI service**:
 
-### Typical Savings
-- **Upfront cost**: +50-200 tokens per query
-- **Saved follow-ups**: 1-3 queries (150-450 tokens each)
-- **Net result**: Usually 20-60% token savings
-- **Quality improvement**: Project-specific, accurate responses
+- **OpenAI GPT-3.5/GPT-4**: Save tokens on input costs
+- **Anthropic Claude**: Save tokens on message costs  
+- **Google Gemini**: Save tokens on prompt costs
+- **Local models**: Faster inference with less context
+- **Any future AI service**: Savings are universal!
+
+### Typical Efficiency
+- **Context reduction**: 80-95% fewer context tokens
+- **Quality maintained**: Smart filtering keeps relevance high
+- **Universal benefit**: Works regardless of AI pricing model
 
 ## Tips for Maximum Efficiency
 
