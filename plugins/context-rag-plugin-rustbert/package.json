@@ -1,0 +1,10 @@
+{
+  "name": "context-rag-plugin-rustbert",
+  "version": "0.1.0",
+  "description": "Rust-based BERT embeddings plugin for context-rag",
+  "main": "index.js",
+  "keywords": ["context-rag-plugin", "rust", "bert", "embeddings"],
+  "author": "context-rag",
+  "license": "MIT",
+  "dependencies": {}
+}

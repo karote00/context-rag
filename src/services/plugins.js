@@ -7,7 +7,9 @@ class PluginManager {
     this.config = config;
     this.plugins = new Map();
     this.transformers = [];
+    this.embedders = new Map();
     this.pluginDir = '.context-rag/plugins';
+    this.loadedPlugins = [];
   }
 
   async loadPlugins() {
@@ -59,15 +61,25 @@ class PluginManager {
     try {
       // Look for context-rag-plugin-* packages in node_modules
       const nodeModulesPath = 'node_modules';
-      if (!fs.existsSync(nodeModulesPath)) {
-        return;
+      if (fs.existsSync(nodeModulesPath)) {
+        const entries = fs.readdirSync(nodeModulesPath, { withFileTypes: true });
+        
+        for (const entry of entries) {
+          if (entry.isDirectory() && entry.name.startsWith('context-rag-plugin-')) {
+            await this.loadExternalPlugin(entry.name);
+          }
+        }
       }
 
-      const entries = fs.readdirSync(nodeModulesPath, { withFileTypes: true });
-      
-      for (const entry of entries) {
-        if (entry.isDirectory() && entry.name.startsWith('context-rag-plugin-')) {
-          await this.loadExternalPlugin(entry.name);
+      // Also look in local plugins directory
+      const localPluginsPath = 'plugins';
+      if (fs.existsSync(localPluginsPath)) {
+        const entries = fs.readdirSync(localPluginsPath, { withFileTypes: true });
+        
+        for (const entry of entries) {
+          if (entry.isDirectory() && entry.name.startsWith('context-rag-plugin-')) {
+            await this.loadExternalPlugin(entry.name, localPluginsPath);
+          }
         }
       }
     } catch (error) {
@@ -75,9 +87,9 @@ class PluginManager {
     }
   }
 
-  async loadExternalPlugin(pluginName) {
+  async loadExternalPlugin(pluginName, basePath = 'node_modules') {
     try {
-      const pluginPath = path.join('node_modules', pluginName);
+      const pluginPath = path.join(basePath, pluginName);
       const packageJsonPath = path.join(pluginPath, 'package.json');
       
       if (!fs.existsSync(packageJsonPath)) {
@@ -92,13 +104,29 @@ class PluginManager {
       }
 
       // Load the plugin
-      const plugin = require(pluginPath);
+      const plugin = require(path.resolve(pluginPath));
       
+      // Register transformers
       if (plugin.transformers) {
         for (const [name, transformer] of Object.entries(plugin.transformers)) {
           this.registerTransformer(`${pluginName}:${name}`, transformer);
         }
       }
+
+      // Register embedders
+      if (plugin.embedders) {
+        for (const [name, embedder] of Object.entries(plugin.embedders)) {
+          this.registerEmbedder(`${pluginName}:${name}`, embedder);
+        }
+      }
+
+      this.loadedPlugins.push({
+        name: pluginName,
+        version: plugin.version || packageJson.version,
+        description: plugin.description || packageJson.description,
+        transformers: Object.keys(plugin.transformers || {}),
+        embedders: Object.keys(plugin.embedders || {})
+      });
 
       console.log(chalk.green(`✅ Loaded external plugin: ${pluginName}`));
       
@@ -145,11 +173,34 @@ class PluginManager {
     return transformedResults;
   }
 
+  registerEmbedder(name, embedder) {
+    if (!embedder.create || typeof embedder.create !== 'function') {
+      throw new Error(`Embedder ${name} must have a create function`);
+    }
+
+    this.embedders.set(name, embedder);
+  }
+
+  getEmbedder(name) {
+    return this.embedders.get(name);
+  }
+
   listTransformers() {
     return this.transformers.map(t => ({
       name: t.name,
       description: t.description || 'No description available'
     }));
+  }
+
+  listEmbedders() {
+    return Array.from(this.embedders.entries()).map(([name, embedder]) => ({
+      name: name,
+      description: embedder.description || 'No description available'
+    }));
+  }
+
+  listLoadedPlugins() {
+    return this.loadedPlugins;
   }
 
   // Built-in transformers
