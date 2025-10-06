@@ -1,37 +1,153 @@
 const chalk = require('chalk');
 const { loadConfig } = require('../services/config');
+const { FileWatcher } = require('../services/watcher');
+const { GitService } = require('../services/git');
+const { ContextRagIndexer } = require('../services/indexer');
 
 async function watchCommand() {
   try {
-    console.log(chalk.blue('👀 Starting watch mode...'));
-    
     // Load configuration
     const config = await loadConfig();
     if (!config) {
-      console.error(chalk.red('No configuration found. Run "context-rag init" first.'));
       process.exit(1);
     }
 
-    // TODO: Implement file watching logic
-    // This will be implemented in Phase 3 with incremental updates
-    console.log(chalk.yellow('⚠️  Watch mode not yet implemented'));
-    console.log(chalk.gray('This will be implemented with file watching in Phase 3'));
-    console.log(chalk.gray('Press Ctrl+C to exit'));
+    const gitService = new GitService(config);
+    const watcher = new FileWatcher(config, gitService);
     
-    // Keep process alive for demonstration
+    // Set up event handlers
+    watcher.on('fileAdded', async (filePath, content) => {
+      console.log(chalk.green(`➕ Indexing new file: ${filePath}`));
+      await updateIndexForFile(filePath, config, gitService);
+    });
+
+    watcher.on('fileModified', async (filePath, content) => {
+      console.log(chalk.yellow(`🔄 Re-indexing modified file: ${filePath}`));
+      await updateIndexForFile(filePath, config, gitService);
+    });
+
+    watcher.on('fileDeleted', async (filePath) => {
+      console.log(chalk.red(`🗑️  Removing deleted file from index: ${filePath}`));
+      await removeFileFromIndex(filePath, config, gitService);
+    });
+
+    watcher.on('branchChanged', async (oldBranch, newBranch) => {
+      console.log(chalk.blue(`🌿 Branch changed: ${oldBranch} → ${newBranch}`));
+      console.log(chalk.gray('   Index will be updated for new branch context'));
+      
+      // Trigger cache merge if needed
+      if (newBranch !== 'main' && newBranch !== 'master') {
+        await gitService.mergeCacheFromBase('main');
+      }
+    });
+
+    // Handle graceful shutdown
     process.on('SIGINT', () => {
-      console.log(chalk.blue('\n👋 Watch mode stopped'));
+      console.log(chalk.blue('\n🛑 Stopping watch mode...'));
+      watcher.stopWatching();
       process.exit(0);
     });
+
+    process.on('SIGTERM', () => {
+      watcher.stopWatching();
+      process.exit(0);
+    });
+
+    // Start watching
+    await watcher.startWatching('.');
     
-    // Simulate watching
-    setInterval(() => {
-      // This will be replaced with actual file watching logic
-    }, 1000);
+    // Keep process alive
+    const keepAlive = () => {
+      setTimeout(keepAlive, 1000);
+    };
+    keepAlive();
     
   } catch (error) {
-    console.error(chalk.red('Error in watch mode:'), error.message);
+    console.error(chalk.red('❌ Error in watch mode:'), error.message);
     process.exit(1);
+  }
+}
+
+async function updateIndexForFile(filePath, config, gitService) {
+  try {
+    // Get branch-specific cache path
+    const branchCachePath = await gitService.getBranchCachePath();
+    const branchConfig = { ...config };
+    branchConfig.storage.path = branchCachePath;
+
+    // Load existing index
+    const fs = require('fs');
+    let indexData = { files: {}, chunks: [], metadata: {} };
+    
+    if (fs.existsSync(branchCachePath)) {
+      const indexContent = fs.readFileSync(branchCachePath, 'utf8');
+      indexData = JSON.parse(indexContent);
+    }
+
+    // Remove existing chunks for this file
+    indexData.chunks = indexData.chunks.filter(chunk => chunk.file_path !== filePath);
+    delete indexData.files[filePath];
+
+    // Add new chunks for the file
+    const indexer = new ContextRagIndexer(branchConfig);
+    const content = fs.readFileSync(filePath, 'utf8');
+    const crypto = require('crypto');
+    const fileHash = crypto.createHash('sha256').update(content).digest('hex');
+    const stats = fs.statSync(filePath);
+    
+    const chunks = indexer.chunkContent(content);
+    
+    indexData.files[filePath] = {
+      hash: fileHash,
+      modified: stats.mtime.getTime(),
+      chunks: chunks.length
+    };
+
+    chunks.forEach((chunk, index) => {
+      indexData.chunks.push({
+        file_path: filePath,
+        content: chunk,
+        chunk_index: index,
+        file_hash: fileHash,
+        modified_time: stats.mtime.getTime()
+      });
+    });
+
+    // Save updated index
+    fs.writeFileSync(branchCachePath, JSON.stringify(indexData, null, 2));
+    
+    console.log(chalk.gray(`   ✅ Updated index with ${chunks.length} chunks`));
+    
+  } catch (error) {
+    console.warn(chalk.yellow(`⚠️  Failed to update index for ${filePath}: ${error.message}`));
+  }
+}
+
+async function removeFileFromIndex(filePath, config, gitService) {
+  try {
+    const branchCachePath = await gitService.getBranchCachePath();
+    const fs = require('fs');
+    
+    if (!fs.existsSync(branchCachePath)) {
+      return;
+    }
+
+    const indexContent = fs.readFileSync(branchCachePath, 'utf8');
+    const indexData = JSON.parse(indexContent);
+
+    // Remove chunks for this file
+    const originalChunkCount = indexData.chunks.length;
+    indexData.chunks = indexData.chunks.filter(chunk => chunk.file_path !== filePath);
+    delete indexData.files[filePath];
+
+    // Save updated index
+    fs.writeFileSync(branchCachePath, JSON.stringify(indexData, null, 2));
+    
+    const removedChunks = originalChunkCount - indexData.chunks.length;
+    console.log(chalk.gray(`   ✅ Removed ${removedChunks} chunks from index`));
+    
+  } catch (error) {
+    console.warn(chalk.yellow(`⚠️  Failed to remove ${filePath} from index: ${error.message}`));
   }
 }
 

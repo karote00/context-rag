@@ -3,12 +3,14 @@ const path = require('path');
 const chalk = require('chalk');
 const { EmbeddingService } = require('./embedder');
 const { GitService } = require('./git');
+const { ContextService } = require('./context');
 
 class SearchService {
   constructor(config) {
     this.config = config;
     this.embeddingService = new EmbeddingService(config);
     this.gitService = new GitService(config);
+    this.contextService = new ContextService(config);
     this.indexData = null;
   }
 
@@ -82,12 +84,24 @@ class SearchService {
     
     // Sort by similarity and take top K
     results.sort((a, b) => b.similarity - a.similarity);
-    const topResults = results.slice(0, topK);
+    let topResults = results.slice(0, topK * 2); // Get more results for context filtering
     
     // Filter out very low similarity results
-    const filteredResults = topResults.filter(result => result.similarity > 0.1);
+    topResults = topResults.filter(result => result.similarity > 0.1);
     
-    return filteredResults;
+    // Apply context-aware filtering if handoff-ai context is available
+    if (this.indexData.context_metadata) {
+      console.log(chalk.gray('🎯 Applying context-aware search filtering'));
+      topResults = await this.contextService.searchContext(query, topResults, Math.ceil(topK * 0.6));
+    }
+    
+    // Enhance results with context information
+    const enhancedResults = await this.contextService.enhanceSearchResults(topResults);
+    
+    // Take final top K results
+    const finalResults = enhancedResults.slice(0, topK);
+    
+    return finalResults;
   }
 
   cosineSimilarity(vecA, vecB) {
