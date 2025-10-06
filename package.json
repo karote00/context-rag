@@ -13,7 +13,16 @@
     "test:run": "vitest --run",
     "test:coverage": "vitest --coverage"
   },
-  "keywords": ["rag", "cli", "semantic-search", "ai", "context", "retrieval-augmented-generation", "branch-aware", "offline"],
+  "keywords": [
+    "rag",
+    "cli",
+    "semantic-search",
+    "ai",
+    "context",
+    "retrieval-augmented-generation",
+    "branch-aware",
+    "offline"
+  ],
   "author": "karoteglathe",
   "license": "MIT",
   "engines": {

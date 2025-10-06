@@ -130,11 +130,15 @@ For a complete walkthrough, see the [Quick Start Guide](./docs/quick-start.md).
 
 ## Documentation
 
-- [Installation Guide](./docs/installation.md) - Setup and dependencies
+### For Beginners 🌟
+- [Complete Beginner's Guide](./docs/beginner-tutorial.md) - Step-by-step tutorial with examples
+- [Interactive Tutorial](./tools/interactive-tutorial.js) - Hands-on guided walkthrough  
+- [Cheat Sheet](./docs/cheat-sheet.md) - Quick reference for all commands
+
+### For Everyone
 - [Quick Start Guide](./docs/quick-start.md) - Get started in minutes  
+- [Installation Guide](./docs/installation.md) - Setup and dependencies
 - [API Reference](./docs/api.md) - Complete command and API documentation
-- [Configuration](./docs/configuration.md) - Configuration options
-- [Plugin Development](./docs/plugins.md) - Creating custom transformers
 
 ## Development
 
