@@ -1,4 +1,8 @@
-# AI Agent Integration Guide
+# AI Agent Integration Guide (Advanced)
+
+> **🚀 Quick Start**: Most users should use [AGENTS-SIMPLE.md](./AGENTS-SIMPLE.md) instead (just 10 lines to add to your AI config).
+> 
+> This document is for developers who want complete implementation details.
 
 This document explains how AI agents should integrate with context-rag to provide intelligent, context-aware assistance.
 

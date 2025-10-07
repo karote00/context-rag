@@ -135,7 +135,8 @@ For a complete walkthrough, see the [Quick Start Guide](./docs/quick-start.md).
 - [Configuration Reference](./docs/configuration.md) - Complete configuration options
 - [API Reference](./docs/api.md) - Complete command and API documentation
 - [Expanded Search Guide](./docs/expanded-search.md) - Multi-pass context discovery
-- [AI Agent Integration](./AGENTS.md) - How AI agents should use context-rag
+- [AI Agent Integration](./AGENTS-SIMPLE.md) - Quick setup for AI agents (10 lines)
+- [Advanced Agent Guide](./AGENTS.md) - Complete implementation details
 - [Plugin Development](./docs/plugins.md) - Creating custom transformers
 - [Token Efficiency Tools](./tools/README.md) - Measure your savings
 
