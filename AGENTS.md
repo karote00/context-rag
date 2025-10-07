@@ -8,8 +8,29 @@ This document explains how AI agents should integrate with context-rag to provid
 
 ## 🤖 **Agent Workflow**
 
-### **Step 1: Determine If Context Is Needed**
-AI agents should **intelligently decide** when to gather context. Use context-rag for:
+### **Step 1: User Hint System (Recommended)**
+Let users explicitly control when to use context-rag with simple prefixes:
+
+**🎯 User Hint Approach:**
+- `context-rag:` or `ctx:` → Always use context-rag
+- `general:` → Never use context-rag
+- `project:` → Always use context-rag
+- No prefix → Your default behavior choice
+
+**Examples:**
+```
+User: "context-rag: how does authentication work?"
+→ AI runs context-rag and uses project context
+
+User: "general: what is JWT?"
+→ AI answers directly without context-rag
+
+User: "how does authentication work?"
+→ AI follows your default behavior (always/never/guess)
+```
+
+### **Alternative: AI Decision Logic**
+If you prefer AI to decide automatically (less reliable):
 
 **✅ Use Context-RAG For:**
 - Code-related questions ("How does authentication work?")

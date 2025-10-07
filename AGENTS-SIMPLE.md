@@ -2,38 +2,63 @@
 
 **What users should add to their AGENTS.md or AI configuration file.**
 
-## 🎯 **Minimal Integration (Copy This)**
+## 🎯 **User Hint Approach (Recommended)**
 
-Add this to your AI agent's system prompt or AGENTS.md:
+Let users control when to use context-rag with simple prefixes:
 
 ```
 CONTEXT-RAG INTEGRATION:
 
-For project-specific coding questions, gather context first:
-1. Run: context-rag ai "[user question]" --expand
-2. Parse JSON response from stdout
-3. Use context in your answer, or fall back to general guidance if no context
+TRIGGER: When user message starts with "context-rag:" or "ctx:"
+ACTION: Run: context-rag ai "[user question without prefix]" --expand
 
-PROJECT QUESTIONS (use context-rag):
-- "How does [feature] work in this project?"
-- "How do I implement/add/fix [something]?"
-- "Explain the architecture/structure"
-- "Debug/troubleshoot [issue]"
+EXAMPLES:
+User: "context-rag: how does authentication work?"
+→ AI runs: context-rag ai "how does authentication work" --expand
+→ AI uses project context in response
 
-GENERAL QUESTIONS (answer directly):
-- "What is [technology]?"
-- "Difference between X and Y?"
-- "Best practices for [general topic]"
+User: "general: what is JWT?"  
+→ AI answers directly without context-rag
 
-COMMAND: context-rag ai "user question" --expand
-OUTPUT: JSON with project context or error message
+User: "how does authentication work?"
+→ AI decides based on your preference (see options below)
+
+DEFAULT BEHAVIOR OPTIONS:
+Option A: Always use context-rag unless "general:" prefix
+Option B: Never use context-rag unless "context-rag:" prefix  
+Option C: AI tries to guess (not recommended)
+```
+
+## 🎯 **Alternative: Simple Keywords**
+
+```
+CONTEXT-RAG TRIGGERS:
+- "context-rag:" or "ctx:" → Always use context
+- "general:" → Never use context  
+- "project:" → Always use context
+- No prefix → Your choice (always/never/guess)
 ```
 
 ## 🔧 **Simple Code Example**
 
-If your agent supports custom functions, add this:
-
 ```javascript
+async function handleUserQuery(userMessage) {
+  // Parse user hints
+  if (userMessage.startsWith('context-rag:') || userMessage.startsWith('ctx:')) {
+    const query = userMessage.replace(/^(context-rag:|ctx:)\s*/, '');
+    const context = await getProjectContext(query);
+    return generateContextResponse(query, context);
+  }
+  
+  if (userMessage.startsWith('general:')) {
+    const query = userMessage.replace(/^general:\s*/, '');
+    return generateGeneralResponse(query);
+  }
+  
+  // No prefix - use your default behavior
+  return handleDefaultBehavior(userMessage);
+}
+
 async function getProjectContext(query) {
   try {
     const { exec } = require('child_process');
@@ -41,16 +66,8 @@ async function getProjectContext(query) {
     const result = JSON.parse(stdout);
     return result.status === 'success' ? result.context : null;
   } catch (error) {
-    return null; // No context available
+    return null;
   }
-}
-
-// Use in your agent:
-const context = await getProjectContext(userQuery);
-if (context) {
-  // Answer with project-specific context
-} else {
-  // Answer with general guidance
 }
 ```
 

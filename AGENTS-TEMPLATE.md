@@ -6,25 +6,29 @@
 
 ## Context-RAG Integration
 
-For project-specific coding questions, gather context first using context-rag:
+**User Hint System**: Let users control when to use context-rag with prefixes:
 
-**Command**: `context-rag ai "[user question]" --expand`
+**Triggers**:
+- `context-rag:` or `ctx:` → Use context-rag for this question
+- `general:` → Answer without context-rag  
+- `project:` → Use context-rag for this question
 
-**When to use**:
-- Project-specific questions ("How does auth work in this project?")
-- Implementation questions ("How do I add a new feature?") 
-- Debugging questions ("Why is X failing?")
-- Architecture questions ("Explain the project structure")
+**Examples**:
+```
+User: "context-rag: how does authentication work?"
+→ Run: context-rag ai "how does authentication work" --expand
+→ Use project context in response
 
-**When NOT to use**:
-- General programming questions ("What is React?")
-- Theoretical questions ("Difference between SQL and NoSQL?")
+User: "general: what is JWT?"
+→ Answer directly without context-rag
 
-**Usage**:
-1. Run the command above
-2. Parse JSON response from stdout
-3. Use context in answer, or provide general guidance if no context found
+User: "how does authentication work?" 
+→ Choose your default behavior (always/never/guess)
+```
+
+**Command**: `context-rag ai "[user question without prefix]" --expand`
+**Output**: JSON with project context or error message
 
 ---
 
-**That's it! Just copy the section above into your AI agent configuration.**
+**That's it! Users can now explicitly control when to use context-rag.**
