@@ -1,6 +1,14 @@
 # Copy-Paste Template for AI Agents
 
-**Copy this section and paste it into your AGENTS.md or AI configuration:**
+**After running `context-rag init`, just add this one line to your AGENTS.md:**
+
+```
+#[[file:.context-rag/AGENTS.md]]
+```
+
+**Alternative: Manual Integration**
+
+If you prefer to copy-paste manually instead of using the file reference:
 
 ---
 
@@ -30,5 +38,3 @@ User: "how does authentication work?"
 **Output**: JSON with project context or error message
 
 ---
-
-**That's it! Users can now explicitly control when to use context-rag.**

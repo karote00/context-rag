@@ -1,6 +1,12 @@
 # Simple AI Agent Integration
 
-**What users should add to their AGENTS.md or AI configuration file.**
+**After running `context-rag init`, just add one line to your AGENTS.md:**
+
+```
+#[[file:.context-rag/AGENTS.md]]
+```
+
+**That's it!** Context-rag will manage the integration instructions automatically.
 
 ## 🎯 **User Hint Approach (Recommended)**
 
