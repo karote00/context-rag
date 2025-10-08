@@ -35,9 +35,7 @@ Search project context using natural language.
 ```bash
 context-rag query "authentication middleware"
 context-rag query "database connection" --json
-context-rag query "error handling" --format markdown
-context-rag query "API endpoints" --top-k 10
-context-rag query "drag resize element" --expand --max-passes 3
+context-rag ai "how to implement authentication"
 ```
 
 **Arguments:**
@@ -46,10 +44,6 @@ context-rag query "drag resize element" --expand --max-passes 3
 **Options:**
 - `-k, --top-k <number>` - Number of results to return (default: 5)
 - `--json` - Output results in JSON format
-- `-t, --transform <transformers>` - Apply result transformers (comma-separated)
-- `--format <format>` - Output format: json, markdown, summary, code
-- `--expand` - Use multi-pass expanded search for better context discovery
-- `--max-passes <number>` - Maximum search passes for expanded search (default: 3)
 
 ### `context-rag watch`
 
@@ -89,19 +83,20 @@ context-rag status --json            # JSON status output
 
 ### `context-rag ai <query>`
 
-Query with AI-optimized output format.
+Get project context for AI agents with token-efficient JSON output.
 
 ```bash
 context-rag ai "explain the architecture"
-context-rag ai "authentication flow" --expand
+context-rag ai "how to implement authentication"
 ```
 
 **Arguments:**
-- `<query>` - Natural language query
+- `<query>` - Natural language query about the project
 
 **Options:**
 - `-k, --top-k <number>` - Number of results to return (default: 5)
-- `--expand` - Use multi-pass expanded search for comprehensive context
+
+**Purpose:** AI agents call this command to get relevant project context instead of sending entire codebase, achieving 90% token savings.
 
 ### `context-rag plugins`
 
