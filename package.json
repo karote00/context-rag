@@ -1,7 +1,7 @@
 {
   "name": "context-rag",
   "version": "1.0.1",
-  "description": "A lightweight CLI tool for semantic search (RAG) on project context, with branch-aware caching and AI integration.",
+  "description": "Get relevant project context for AI agents to save 90% of tokens. Lightweight CLI tool for semantic search on project codebases.",
   "main": "src/index.js",
   "bin": {
     "context-rag": "./bin/context-rag.js"
@@ -14,20 +14,19 @@
     "test:coverage": "vitest --coverage"
   },
   "keywords": [
+    "ai",
+    "tokens",
+    "context",
     "rag",
     "cli",
     "semantic-search",
-    "ai",
-    "context",
-    "retrieval-augmented-generation",
-    "branch-aware",
-    "offline",
     "chatgpt",
     "claude",
+    "gemini",
     "token-efficiency",
     "code-search",
-    "embeddings",
-    "git-aware"
+    "project-context",
+    "ai-agents"
   ],
   "author": "karoteglathe",
   "license": "MIT",
@@ -38,10 +37,10 @@
     "src/",
     "bin/",
     "python/",
-    "plugins/",
     "docs/",
     "tools/",
     "README.md",
+    "AGENTS.md",
     "LICENSE"
   ],
   "dependencies": {

@@ -1,8 +1,6 @@
 const chalk = require('chalk');
 const { loadConfig } = require('../services/config');
 const { APIService } = require('../services/api');
-const { PluginManager } = require('../services/plugins');
-const { ExpandedSearchService } = require('../services/expanded-search');
 
 async function queryCommand(query, options = {}) {
   try {
@@ -14,13 +12,8 @@ async function queryCommand(query, options = {}) {
 
     const topK = parseInt(options.topK) || config.search.top_k || 5;
     
-    // Initialize plugin manager
-    const pluginManager = new PluginManager(config);
-    await pluginManager.loadPlugins();
-    
-    // Initialize services
+    // Initialize API service
     const apiService = new APIService(config);
-    const expandedSearchService = new ExpandedSearchService(config);
     
     // Check if index exists
     const indexStatus = await apiService.getIndexStatus();
@@ -38,38 +31,8 @@ async function queryCommand(query, options = {}) {
       process.exit(1);
     }
     
-    // Perform search via API (with optional expansion)
-    let apiResult;
-    if (options.expand) {
-      console.log(chalk.blue('🔍 Using expanded search for better context discovery...'));
-      const maxPasses = parseInt(options.maxPasses) || 3;
-      
-      // Use expanded search service directly
-      try {
-        await expandedSearchService.generateEmbeddingsForIndex();
-      } catch (error) {
-        console.log(chalk.yellow(`⚠️  ${error.message}`));
-        console.log(chalk.gray('Run "context-rag index" to create an index first.'));
-        process.exit(1);
-      }
-      
-      const expandedResults = await expandedSearchService.expandedSearch(query, { 
-        topK, 
-        maxPasses 
-      });
-      
-      // Format as API result
-      apiResult = {
-        query,
-        results: expandedResults,
-        total_results: expandedResults.length,
-        search_options: { topK, expanded: true, maxPasses },
-        timestamp: new Date().toISOString(),
-        model: config.embedder.model
-      };
-    } else {
-      apiResult = await apiService.query(query, { topK });
-    }
+    // Perform search via API
+    const apiResult = await apiService.query(query, { topK });
     
     if (apiResult.error) {
       if (options.json) {
@@ -90,49 +53,12 @@ async function queryCommand(query, options = {}) {
       return;
     }
 
-    // Apply transformers if specified
-    let finalResult = apiResult;
-    
-    if (options.transform || options.format) {
-      let transformers = [];
-      
-      if (options.transform) {
-        transformers = options.transform.split(',').map(t => t.trim());
-      } else if (options.format) {
-        // Map format to transformer
-        const formatMap = {
-          'markdown': ['markdown'],
-          'summary': ['summary'],
-          'code': ['code'],
-          'context': ['context-extract']
-        };
-        transformers = formatMap[options.format] || [];
-      }
-      
-      if (transformers.length > 0) {
-        try {
-          const transformedResult = await pluginManager.transformResults(apiResult.results, transformers);
-          
-          if (options.json || options.format) {
-            console.log(JSON.stringify(transformedResult, null, 2));
-            return;
-          } else {
-            // For non-JSON output, we'll still show the original format
-            // but could enhance it based on transformers
-            finalResult = apiResult;
-          }
-        } catch (error) {
-          console.warn(chalk.yellow(`⚠️  Transformer failed: ${error.message}`));
-        }
-      }
-    }
-
     if (options.json) {
       // Full API response for JSON mode
-      console.log(JSON.stringify(finalResult, null, 2));
+      console.log(JSON.stringify(apiResult, null, 2));
     } else {
       // Human-friendly output
-      const results = finalResult.results;
+      const results = apiResult.results;
       console.log(chalk.green(`\n📋 Found ${results.length} relevant results:\n`));
       
       results.forEach((result, index) => {
