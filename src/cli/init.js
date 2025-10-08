@@ -45,13 +45,7 @@ const defaultConfig = {
   },
   search: {
     engine: "rust",
-    top_k: 5,
-    expanded_search: {
-      enabled: false,
-      max_passes: 3,
-      enable_code_references: true,
-      enable_co_occurrence: true
-    }
+    top_k: 5
   },
   storage: {
     type: "sqlite",
