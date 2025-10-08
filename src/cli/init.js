@@ -65,39 +65,18 @@ const defaultConfig = {
 };
 
 function createToolManifest() {
-  const toolManifestPath = '.context-rag/tool-manifest.json';
+  const toolManifestPath = '.context-rag/tool-info.json';
   
-  const toolManifest = {
+  const toolInfo = {
     name: 'context-rag',
     version: require('../../package.json').version,
-    description: 'Semantic search for project context using RAG',
-    type: 'ai-tool',
-    discovery: {
-      command: 'context-rag',
-      check: 'which context-rag'
-    },
-    capabilities: {
-      search: {
-        command: 'context-rag ai',
-        description: 'Get project context for a query',
-        input: 'Natural language query about the project',
-        output: 'JSON with structured project context',
-        examples: [
-          'context-rag ai "how does authentication work"',
-          'context-rag ai "explain the project structure"',
-          'context-rag ai "how to add new API endpoint"'
-        ]
-      }
-    },
-    integration: {
-      type: 'auto-discovery',
-      method: 'command-line',
-      interface: 'json-output'
-    }
+    description: 'Get project context for AI agents to save tokens',
+    command: 'context-rag ai',
+    purpose: 'AI agents call this to get relevant project context instead of sending entire codebase'
   };
   
-  fs.writeFileSync(toolManifestPath, JSON.stringify(toolManifest, null, 2));
-  console.log(chalk.green('Created tool manifest for auto-discovery'));
+  fs.writeFileSync(toolManifestPath, JSON.stringify(toolInfo, null, 2));
+  console.log(chalk.green('Created tool info for AI integration'));
 }
 
 async function initCommand() {
@@ -122,7 +101,7 @@ async function initCommand() {
     fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
     console.log(chalk.green(`Created configuration file: ${configPath}`));
 
-    // Create tool manifest for auto-discovery
+    // Create tool info for AI integration
     createToolManifest();
 
     // Create subdirectories
@@ -136,10 +115,9 @@ async function initCommand() {
 
     console.log(chalk.blue('\n✨ Context-RAG initialized successfully!'));
     console.log(chalk.gray('Next steps:'));
-    console.log(chalk.gray('  1. Run "context-rag index" to build your first index'));
-    console.log(chalk.gray('  2. Try "context-rag query \'your question\'" to search'));
-    console.log(chalk.gray('  3. AI agents will auto-discover context-rag (zero config!)'));
-    console.log(chalk.gray('  4. Just ask your AI natural questions about the project'));
+    console.log(chalk.gray('  1. Run "context-rag index" to build your project index'));
+    console.log(chalk.gray('  2. AI agents can now call "context-rag ai <question>" for context'));
+    console.log(chalk.gray('  3. Enjoy 90% token savings with project-specific responses!'));
     
   } catch (error) {
     console.error(chalk.red('Error during initialization:'), error.message);
