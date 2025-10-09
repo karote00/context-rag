@@ -61,9 +61,21 @@ async function statusCommand(options = {}) {
       console.log(chalk.yellow('   ⚠️  Not in a git repository'));
     }
 
+    // Check for handoff-ai integration
+    const hasHandoffAI = require('fs').existsSync('.project') && 
+      require('fs').statSync('.project').isDirectory() &&
+      require('fs').readdirSync('.project').some(file => 
+        file.includes('context') || file.includes('overview') || 
+        file.includes('architecture') || file.endsWith('.md')
+      );
+
     // Context Status
     console.log(chalk.cyan('\n🎯 Context Status:'));
-    if (contextInfo.has_context) {
+    if (hasHandoffAI) {
+      console.log(chalk.green('   ✅ Handoff-AI integration detected'));
+      console.log(chalk.gray('   📂 Using .project/ directory for context'));
+      console.log(chalk.gray('   🎯 Optimized for handoff-ai generated documentation'));
+    } else if (contextInfo.has_context) {
       console.log(chalk.green('   ✅ Project context detected'));
       console.log(chalk.gray(`   📂 Path: ${contextInfo.context_path}`));
       console.log(chalk.gray(`   📄 Files: ${contextInfo.total_context_files}`));
@@ -96,8 +108,9 @@ async function statusCommand(options = {}) {
       console.log(chalk.yellow('   • Run "context-rag index" to update index with recent changes'));
     }
     
-    if (!contextInfo.has_context) {
-      console.log(chalk.gray('   • Consider adding structured context in .project/ folder'));
+    if (!contextInfo.has_context && !hasHandoffAI) {
+      console.log(chalk.gray('   • Consider using handoff-ai to generate .project/ context'));
+      console.log(chalk.gray('   • Or add structured context manually in .project/ folder'));
     }
     
     if (branchInfo.total_cached_branches > 5) {

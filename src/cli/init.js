@@ -34,29 +34,77 @@ User: "how does authentication work?"
 - Option C: AI tries to guess (not recommended)
 `;
 
-const defaultConfig = {
-  index: {
-    include: ["docs/", "README.md", "*.md"],
-    exclude: ["node_modules/", ".git/", "dist/", "build/"]
-  },
-  embedder: {
-    type: "python",
-    model: "sentence-transformers/all-MiniLM-L6-v2"
-  },
-  search: {
-    engine: "rust",
-    top_k: 5
-  },
-  storage: {
-    type: "sqlite",
-    path: ".context-rag/index.db"
-  },
-  cache: {
-    enabled: true,
-    branch_aware: true,
-    max_size: "1GB"
+function detectHandoffAI() {
+  // Check for .project directory (handoff-ai generated context)
+  if (fs.existsSync('.project') && fs.statSync('.project').isDirectory()) {
+    const projectFiles = fs.readdirSync('.project');
+    // Look for typical handoff-ai generated files
+    const hasContext = projectFiles.some(file => 
+      file.includes('context') || 
+      file.includes('overview') || 
+      file.includes('architecture') ||
+      file.endsWith('.md')
+    );
+    return hasContext;
   }
-};
+  return false;
+}
+
+function createConfig() {
+  const hasHandoffAI = detectHandoffAI();
+  
+  if (hasHandoffAI) {
+    // Handoff-AI detected - focus on .project directory
+    return {
+      index: {
+        include: [".project/"],
+        exclude: ["node_modules/", ".git/", "dist/", "build/"]
+      },
+      embedder: {
+        type: "python",
+        model: "sentence-transformers/all-MiniLM-L6-v2"
+      },
+      search: {
+        engine: "rust",
+        top_k: 5
+      },
+      storage: {
+        type: "sqlite",
+        path: ".context-rag/index.db"
+      },
+      cache: {
+        enabled: true,
+        branch_aware: true,
+        max_size: "1GB"
+      }
+    };
+  } else {
+    // Standard configuration
+    return {
+      index: {
+        include: ["docs/", "README.md", "*.md"],
+        exclude: ["node_modules/", ".git/", "dist/", "build/"]
+      },
+      embedder: {
+        type: "python",
+        model: "sentence-transformers/all-MiniLM-L6-v2"
+      },
+      search: {
+        engine: "rust",
+        top_k: 5
+      },
+      storage: {
+        type: "sqlite",
+        path: ".context-rag/index.db"
+      },
+      cache: {
+        enabled: true,
+        branch_aware: true,
+        max_size: "1GB"
+      }
+    };
+  }
+}
 
 function createToolManifest() {
   const toolManifestPath = '.context-rag/tool-info.json';
@@ -91,9 +139,19 @@ async function initCommand() {
       console.log(chalk.green(`Created cache directory: ${cacheDir}`));
     }
 
-    // Write default configuration
-    fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
+    // Detect handoff-ai and create appropriate configuration
+    const config = createConfig();
+    const hasHandoffAI = detectHandoffAI();
+    
+    // Write configuration
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
     console.log(chalk.green(`Created configuration file: ${configPath}`));
+    
+    if (hasHandoffAI) {
+      console.log(chalk.blue('🎯 Handoff-AI detected!'));
+      console.log(chalk.gray('   Configured to index .project/ directory for optimal context'));
+      console.log(chalk.gray('   You can add more paths to "include" in .context-rag.config.json if needed'));
+    }
 
     // Create tool info for AI integration
     createToolManifest();
@@ -109,7 +167,7 @@ async function initCommand() {
 
     // Detect and show available embedding engine
     const { EmbeddingService } = require('../services/embedder');
-    const embedder = new EmbeddingService(defaultConfig);
+    const embedder = new EmbeddingService(config);
     const engine = await embedder.detectEmbeddingEngine();
 
     console.log(chalk.blue('\n✨ Context-RAG initialized successfully!'));
