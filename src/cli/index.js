@@ -27,6 +27,26 @@ async function indexCommand(targetPath = '.', options = {}) {
     if (currentBranch) {
       console.log(chalk.blue(`🌿 Current branch: ${currentBranch}`));
       
+      // Check if this is the first index and we're not on main branch
+      const mainBranchCache = path.join('.context-rag', 'cache', 'main.db');
+      const masterBranchCache = path.join('.context-rag', 'cache', 'master.db');
+      const hasMainBaseline = fs.existsSync(mainBranchCache) || fs.existsSync(masterBranchCache);
+      
+      if (!hasMainBaseline && currentBranch !== 'main' && currentBranch !== 'master' && !options.skipBranchCheck) {
+        console.log(chalk.yellow('⚠️  First-time indexing detected on feature branch!'));
+        console.log(chalk.red('❌ Cannot create baseline index from feature branch.'));
+        console.log(chalk.gray(''));
+        console.log(chalk.gray('To establish proper branch-aware caching:'));
+        console.log(chalk.cyan('  1. Switch to main branch: git checkout main'));
+        console.log(chalk.cyan('  2. Run initial index: context-rag index'));
+        console.log(chalk.cyan('  3. Switch back to feature branch: git checkout ' + currentBranch));
+        console.log(chalk.cyan('  4. Run index again for branch-specific changes'));
+        console.log(chalk.gray(''));
+        console.log(chalk.gray('This ensures proper diff tracking between main and feature branches.'));
+        console.log(chalk.gray('Use --skip-branch-check to bypass this safety check.'));
+        process.exit(1);
+      }
+      
       // Try to merge cache from base branch if this is a feature branch
       if (!options.force && currentBranch !== 'main' && currentBranch !== 'master') {
         await gitService.mergeCacheFromBase('main');

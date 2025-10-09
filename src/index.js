@@ -27,6 +27,7 @@ program
   .command('index [path]')
   .description('Build semantic index for project files')
   .option('-f, --force', 'Force rebuild of existing index')
+  .option('--skip-branch-check', 'Skip safety check for first-time indexing on feature branch')
   .action(indexCommand);
 
 // Query command

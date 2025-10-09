@@ -173,6 +173,7 @@ async function initCommand() {
     console.log(chalk.blue('\n✨ Context-RAG initialized successfully!'));
     console.log(chalk.gray('Next steps:'));
     console.log(chalk.gray('  1. Run "context-rag index" to build your project index'));
+    console.log(chalk.gray('     📝 Note: First index should be run from main branch for proper branch-aware caching'));
     console.log(chalk.gray('  2. AI agents can now call "context-rag ai <question>" for context'));
     console.log(chalk.gray('  3. Enjoy 90% token savings with project-specific responses!'));
     
