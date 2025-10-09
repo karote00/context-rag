@@ -104,6 +104,14 @@ async function statusCommand(options = {}) {
       console.log(chalk.gray('   • Use "context-rag branch --list" to manage cached branches'));
     }
 
+    // Performance recommendations - prioritize Rust first
+    if (engine === 'nodejs') {
+      console.log(chalk.yellow('   • For best performance, install Rust: curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh'));
+      console.log(chalk.gray('   • Or install Python alternative: pip install sentence-transformers'));
+    } else if (engine === 'python') {
+      console.log(chalk.yellow('   • For fastest performance, install Rust: curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh'));
+    }
+
   } catch (error) {
     if (options.json) {
       console.log(JSON.stringify({

@@ -118,10 +118,12 @@ async function initCommand() {
     console.log(chalk.gray('  2. AI agents can now call "context-rag ai <question>" for context'));
     console.log(chalk.gray('  3. Enjoy 90% token savings with project-specific responses!'));
     
-    // Show performance recommendations
+    // Show performance recommendations - prioritize Rust first
     if (engine === 'nodejs') {
       console.log(chalk.yellow('\n💡 Performance Tip:'));
-      console.log(chalk.gray('   Install Python + sentence-transformers for better semantic search:'));
+      console.log(chalk.gray('   For best performance, install Rust (recommended):'));
+      console.log(chalk.cyan('   curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh'));
+      console.log(chalk.gray('   Or install Python + sentence-transformers (alternative):'));
       console.log(chalk.cyan('   pip install sentence-transformers'));
     } else if (engine === 'python') {
       console.log(chalk.yellow('\n💡 Performance Tip:'));
