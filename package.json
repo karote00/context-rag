@@ -9,9 +9,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node src/index.js",
-    "test": "vitest",
-    "test:run": "vitest --run",
-    "test:coverage": "vitest --coverage"
+    "test": "node test/simple-test-runner.js",
+    "test:run": "node test/simple-test-runner.js",
+    "test:coverage": "node test/simple-test-runner.js"
   },
   "keywords": [
     "ai",
@@ -48,7 +48,5 @@
     "chalk": "^4.1.2",
     "simple-git": "^3.20.0"
   },
-  "devDependencies": {
-    "vitest": "^1.0.0"
-  }
+  "devDependencies": {}
 }
