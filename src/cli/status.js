@@ -75,11 +75,17 @@ async function statusCommand(options = {}) {
       console.log(chalk.gray('   Using general file indexing'));
     }
 
+    // Detect embedding engine
+    const { EmbeddingService } = require('../services/embedder');
+    const embedder = new EmbeddingService(config);
+    const engine = await embedder.detectEmbeddingEngine();
+
     // Configuration
     console.log(chalk.cyan('\n⚙️  Configuration:'));
     console.log(chalk.gray(`   🧠 Embedder: ${config.embedder.model}`));
     console.log(chalk.gray(`   🔍 Search engine: ${config.search.engine}`));
     console.log(chalk.gray(`   📊 Top-K results: ${config.search.top_k}`));
+    console.log(chalk.gray(`   ⚡ Engine: ${engine} ${engine === 'rust' ? '(fastest)' : engine === 'python' ? '(recommended)' : '(basic)'}`));
 
     // Show recommendations
     console.log(chalk.blue('\n💡 Recommendations:'));

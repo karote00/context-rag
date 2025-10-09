@@ -107,11 +107,27 @@ async function initCommand() {
       }
     });
 
+    // Detect and show available embedding engine
+    const { EmbeddingService } = require('../services/embedder');
+    const embedder = new EmbeddingService(defaultConfig);
+    const engine = await embedder.detectEmbeddingEngine();
+
     console.log(chalk.blue('\n✨ Context-RAG initialized successfully!'));
     console.log(chalk.gray('Next steps:'));
     console.log(chalk.gray('  1. Run "context-rag index" to build your project index'));
     console.log(chalk.gray('  2. AI agents can now call "context-rag ai <question>" for context'));
     console.log(chalk.gray('  3. Enjoy 90% token savings with project-specific responses!'));
+    
+    // Show performance recommendations
+    if (engine === 'nodejs') {
+      console.log(chalk.yellow('\n💡 Performance Tip:'));
+      console.log(chalk.gray('   Install Python + sentence-transformers for better semantic search:'));
+      console.log(chalk.cyan('   pip install sentence-transformers'));
+    } else if (engine === 'python') {
+      console.log(chalk.yellow('\n💡 Performance Tip:'));
+      console.log(chalk.gray('   Install Rust for fastest performance (optional):'));
+      console.log(chalk.cyan('   curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh'));
+    }
     
   } catch (error) {
     console.error(chalk.red('Error during initialization:'), error.message);
