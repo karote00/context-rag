@@ -152,7 +152,7 @@ context-rag plugins --list           # List available transformers
     "total_chunks": 1200,
     "has_context": true,
     "context_files": 5,
-    "context_path": "handoff/contexts"
+    "context_path": ".project"
   },
   "branches": {
     "current_branch": "main",
@@ -169,12 +169,12 @@ context-rag plugins --list           # List available transformers
   },
   "context": {
     "has_context": true,
-    "context_path": "handoff/contexts",
+    "context_path": ".project",
     "context_files": [
       {
         "name": "architecture.md",
         "type": "architecture",
-        "path": "handoff/contexts/architecture.md",
+        "path": ".project/architecture.md",
         "size": 2048
       }
     ],
@@ -199,7 +199,7 @@ context-rag plugins --list           # List available transformers
         "type": "architecture",
         "content": "The system follows a microservices architecture...",
         "relevance": 0.95,
-        "source": "handoff/contexts/architecture.md"
+        "source": ".project/architecture.md"
       }
     ],
     "code_context": [

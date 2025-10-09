@@ -103,7 +103,7 @@ class SearchService {
     // Filter out very low similarity results
     topResults = topResults.filter(result => result.similarity > 0.1);
     
-    // Apply context-aware filtering if handoff-ai context is available
+    // Apply context-aware filtering if project context is available
     if (this.indexData.context_metadata) {
       console.log(chalk.gray('🎯 Applying context-aware search filtering'));
       topResults = await this.contextService.searchContext(query, topResults, Math.ceil(topK * 0.6));

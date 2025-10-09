@@ -474,7 +474,7 @@ The status command shows you everything!
 ✅ How many chunks of information
 ✅ Whether everything is working
 ✅ Git branch information (if using git)
-✅ Context detection (handoff-ai integration)
+✅ Context detection (project context integration)
 
 Use this anytime you want to check if everything is working properly!
     `);

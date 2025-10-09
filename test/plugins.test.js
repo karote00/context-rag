@@ -91,7 +91,7 @@ describe('Plugin Manager', () => {
     const contextResults = [
       ...mockResults,
       {
-        file_path: 'handoff/contexts/architecture.md',
+        file_path: '.project/architecture.md',
         content: 'System architecture overview',
         similarity: 0.95,
         snippet: 'System architecture overview...',

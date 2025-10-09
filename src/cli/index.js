@@ -33,8 +33,8 @@ async function indexCommand(targetPath = '.', options = {}) {
       }
     }
 
-    // Check for handoff-ai context
-    const contextInfo = await contextService.detectHandoffContext();
+    // Check for project context
+    const contextInfo = await contextService.detectProjectContext();
     if (contextInfo) {
       console.log(chalk.green(`🎯 Using structured context index (${contextInfo.totalFiles} context files)`));
     }
@@ -67,7 +67,7 @@ async function indexCommand(targetPath = '.', options = {}) {
     // Index regular files
     const result = await indexer.indexDirectory(targetPath, options);
     
-    // Index handoff-ai context if available
+    // Index project context if available
     let contextResult = null;
     if (contextInfo) {
       contextResult = await contextService.indexContextFiles(indexer);
@@ -107,7 +107,7 @@ async function indexCommand(targetPath = '.', options = {}) {
     console.log(chalk.blue('\n🎯 Next steps:'));
     console.log(chalk.gray('  1. Run "context-rag query \'your question\'" to search'));
     if (contextInfo) {
-      console.log(chalk.gray('  2. Context-aware search will prioritize handoff-ai context'));
+      console.log(chalk.gray('  2. Context-aware search will prioritize project context'));
     }
     console.log(chalk.gray('  3. Use "context-rag branch" to manage branch caches'));
     

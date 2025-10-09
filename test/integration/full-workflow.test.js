@@ -31,10 +31,10 @@ describe('Full Workflow Integration Tests', () => {
       'const express = require("express");\n\nconst app = express();\n\napp.get("/", (req, res) => {\n  res.json({ message: "Hello World" });\n});\n\napp.listen(3000);'
     );
     
-    // Create handoff-ai context
-    fs.mkdirSync(path.join(testProjectDir, 'handoff', 'contexts'), { recursive: true });
+    // Create project context
+    fs.mkdirSync(path.join(testProjectDir, '.project'), { recursive: true });
     fs.writeFileSync(
-      path.join(testProjectDir, 'handoff', 'contexts', 'architecture.md'),
+      path.join(testProjectDir, '.project', 'architecture.md'),
       '# System Architecture\n\nThis is the structured architecture context.\n\n## Components\n\n- API Layer\n- Business Logic\n- Data Layer'
     );
     
@@ -75,7 +75,7 @@ describe('Full Workflow Integration Tests', () => {
     expect(queryOutput.query).toBe('architecture');
   }, 30000); // 30 second timeout for integration test
 
-  it('should detect and prioritize handoff-ai context', async () => {
+  it('should detect and prioritize project context', async () => {
     // Initialize and index
     await runCommand('node', [contextRagBin, 'init']);
     const indexResult = await runCommand('node', [contextRagBin, 'index']);

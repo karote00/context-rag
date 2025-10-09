@@ -5,7 +5,7 @@ const chalk = require('chalk');
 class ContextService {
   constructor(config) {
     this.config = config;
-    this.contextPath = 'handoff/contexts';
+    this.contextPath = '.project';
     this.contextTypes = [
       'architecture',
       'golden-path', 
@@ -17,7 +17,7 @@ class ContextService {
     ];
   }
 
-  async detectHandoffContext() {
+  async detectProjectContext() {
     if (!fs.existsSync(this.contextPath)) {
       return null;
     }
@@ -42,7 +42,7 @@ class ContextService {
       }
       
       if (contextFiles.length > 0) {
-        console.log(chalk.blue(`🎯 Detected handoff-ai context with ${contextFiles.length} files`));
+        console.log(chalk.blue(`🎯 Detected project context with ${contextFiles.length} files`));
         return {
           path: this.contextPath,
           files: contextFiles,
@@ -79,13 +79,13 @@ class ContextService {
   }
 
   async indexContextFiles(indexer) {
-    const contextInfo = await this.detectHandoffContext();
+    const contextInfo = await this.detectProjectContext();
     
     if (!contextInfo) {
       return null;
     }
 
-    console.log(chalk.blue('🎯 Indexing handoff-ai context files...'));
+    console.log(chalk.blue('🎯 Indexing project context files...'));
     
     const contextChunks = [];
     let totalChunks = 0;
@@ -182,7 +182,7 @@ class ContextService {
       if (result.is_context) {
         return {
           ...result,
-          source_type: 'handoff-context',
+          source_type: 'project-context',
           context_category: result.context_type,
           priority_score: result.priority || 0
         };

@@ -64,7 +64,7 @@ async function statusCommand(options = {}) {
     // Context Status
     console.log(chalk.cyan('\n🎯 Context Status:'));
     if (contextInfo.has_context) {
-      console.log(chalk.green('   ✅ Handoff-AI context detected'));
+      console.log(chalk.green('   ✅ Project context detected'));
       console.log(chalk.gray(`   📂 Path: ${contextInfo.context_path}`));
       console.log(chalk.gray(`   📄 Files: ${contextInfo.total_context_files}`));
       
@@ -91,7 +91,7 @@ async function statusCommand(options = {}) {
     }
     
     if (!contextInfo.has_context) {
-      console.log(chalk.gray('   • Consider using handoff-ai for structured context'));
+      console.log(chalk.gray('   • Consider adding structured context in .project/ folder'));
     }
     
     if (branchInfo.total_cached_branches > 5) {

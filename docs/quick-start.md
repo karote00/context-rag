@@ -92,7 +92,7 @@ context-rag status
 Shows:
 - Index status and statistics
 - Branch information
-- Context detection (handoff-ai)
+- Context detection (project context)
 - Configuration summary
 
 ## Common Workflows
@@ -181,11 +181,11 @@ Adjust search behavior:
 }
 ```
 
-## Handoff-AI Integration
+## Project Context Integration
 
-If you use handoff-ai for structured context:
+If you have structured project context:
 
-1. Ensure your context is in `handoff/contexts/`
+1. Create context files in `.project/` folder (architecture.md, constraints.md, etc.)
 2. Run `context-rag index` - it will auto-detect structured context
 3. Searches will prioritize structured context over code files
 

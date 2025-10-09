@@ -125,7 +125,7 @@ class APIService {
       const { ContextService } = require('./context');
       const contextService = new ContextService(this.config);
       
-      const contextInfo = await contextService.detectHandoffContext();
+      const contextInfo = await contextService.detectProjectContext();
       
       if (!contextInfo) {
         return {
