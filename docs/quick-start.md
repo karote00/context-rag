@@ -54,12 +54,12 @@ context-rag query "architecture overview" --json
 context-rag ai "explain the main components"
 ```
 
-### Different Output Formats
+### JSON Output for AI Integration
 
 ```bash
-context-rag query "user management" --format markdown
-context-rag query "API endpoints" --format summary
-context-rag query "database schema" --format code
+context-rag query "user management" --json
+context-rag ai "API endpoints overview"
+context-rag status --json
 ```
 
 ### Branch-Aware Caching

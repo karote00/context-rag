@@ -16,7 +16,7 @@ const agentsIntegration = `
 **Examples**:
 \`\`\`
 User: "context-rag: how does authentication work?"
-→ Run: context-rag ai "how does authentication work" --expand
+→ Run: context-rag ai "how does authentication work"
 → Use project context in response
 
 User: "general: what is JWT?"
@@ -26,7 +26,7 @@ User: "how does authentication work?"
 → Use your default behavior (always/never/guess)
 \`\`\`
 
-**Command**: \`context-rag ai "[user question without prefix]" --expand\`
+**Command**: \`context-rag ai "[user question without prefix]"\`
 **Output**: JSON with project context or error message
 
 **Setup**: Choose your default behavior when no prefix is used:

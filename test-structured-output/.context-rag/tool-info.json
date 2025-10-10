@@ -1,0 +1,7 @@
+{
+  "name": "context-rag",
+  "version": "1.3.0",
+  "description": "Get project context for AI agents to save tokens",
+  "command": "context-rag ai",
+  "purpose": "AI agents call this to get relevant project context instead of sending entire codebase"
+}

@@ -110,6 +110,16 @@ context-rag plugins --list           # List available transformers
 **Options:**
 - `-l, --list` - List available transformers
 
+### `context-rag watch`
+
+Watch for file changes and auto-update index.
+
+```bash
+context-rag watch
+```
+
+Monitors file system for changes and incrementally updates the index.
+
 ## JSON API Responses
 
 ### Query Response

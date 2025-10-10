@@ -125,8 +125,8 @@ Default number of results to return for queries.
 - `3` - Fewer, more focused results
 - `10` - More comprehensive results
 
-#### `expanded_search` (Object)
-Configuration for multi-pass context discovery.
+#### `expanded_search` (Object) - *Experimental*
+Configuration for multi-pass context discovery (planned feature).
 
 **Options:**
 - `enabled` (Boolean) - Enable expanded search by default (default: `false`)
@@ -134,20 +134,7 @@ Configuration for multi-pass context discovery.
 - `enable_code_references` (Boolean) - Extract function/class references (default: `true`)
 - `enable_co_occurrence` (Boolean) - Use co-occurrence patterns (default: `true`)
 
-**Example:**
-```json
-"expanded_search": {
-  "enabled": true,
-  "max_passes": 3,
-  "enable_code_references": true,
-  "enable_co_occurrence": true
-}
-```
-
-When enabled, queries automatically use multi-pass search to discover related context through:
-- Code references (function calls, imports, class names)
-- Pattern-based expansion rules (UI events, API patterns, etc.)
-- Co-occurrence analysis for related terms
+**Note:** This is a planned feature for future releases. Currently, the search engine uses single-pass semantic search with high accuracy.
 
 ### `storage` Section
 

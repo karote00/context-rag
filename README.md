@@ -23,6 +23,7 @@ A lightweight CLI tool that helps AI agents understand your project by providing
 - **🎯 Smart Integration**: Auto-detects handoff-ai, docs/, and other context directories
 - **🌿 Branch-Aware**: Automatic git branch detection and caching
 - **🛡️ Branch Safety**: Prevents indexing mistakes with smart baseline enforcement
+- **⚡ Multi-Engine Support**: Rust (fastest) → Python (recommended) → Node.js (fallback)
 
 ---
 
