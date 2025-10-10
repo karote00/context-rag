@@ -2,6 +2,25 @@
 
 **Get relevant project context for AI agents to save 90% of tokens.**
 
+## 🌟 The Vision: A Win-Win AI Ecosystem
+
+Context-rag creates a sustainable AI ecosystem that benefits everyone:
+
+**🎯 For Developers & AI Agents:**
+- **Laser-focused accuracy**: AI gets only relevant context, leading to more precise and project-specific responses
+- **Extended capabilities**: Save 90% on tokens means 10x more tasks within rate limits and budgets
+- **Better outcomes**: Quality over quantity - AI works with curated, meaningful context instead of noise
+
+**💡 For AI Companies:**
+- **Reduced infrastructure costs**: Process 90% fewer tokens while delivering better results
+- **Sustainable scaling**: Efficient token usage enables serving more users with existing resources
+- **Enhanced service quality**: Focused context leads to higher customer satisfaction
+
+**🚀 The Win-Win Result:**
+Users accomplish more with AI, AI companies reduce costs, and everyone benefits from a more efficient, sustainable AI ecosystem. Context-rag isn't just about saving tokens—it's about creating smarter interactions that work better for everyone.
+
+---
+
 A lightweight CLI tool that helps AI agents understand your project by providing focused context instead of sending entire codebases.
 
 ---
@@ -17,9 +36,10 @@ A lightweight CLI tool that helps AI agents understand your project by providing
 - **💰 90% Token Savings**: Send only relevant context, not entire codebase
 - **🎯 Project-Specific Responses**: AI gets actual project patterns and code
 - **🔌 Universal Compatibility**: Works with any AI service (OpenAI, Claude, Gemini, local models)
-- **⚡ Smart Auto-Detection**: Automatically detects and optimizes for your setup
-- **🚀 Cascading Performance**: Rust → Python → Node.js fallback for best speed
-- **🎯 Handoff-AI Integration**: Auto-optimizes for projects with `.project/` context
+- **🎛️ Interactive Setup**: Choose your preferred engine with smart validation and guidance
+- **🚀 Cascading Performance**: Rust → Python → Node.js with availability checking
+- **📚 Organized Context**: Encourages structured project documentation for better AI results
+- **🎯 Smart Integration**: Auto-detects handoff-ai, docs/, and other context directories
 - **🌿 Branch-Aware**: Automatic git branch detection and caching
 - **🛡️ Branch Safety**: Prevents indexing mistakes with smart baseline enforcement
 
@@ -45,14 +65,15 @@ That's it! Context-rag works out of the box with intelligent auto-detection:
 ```bash
 npm install -g context-rag
 cd your-project
-context-rag init          # Auto-detects handoff-ai, shows performance tips
+context-rag init          # Interactive setup with engine selection
 context-rag index         # Smart: run from main branch first for proper baseline
 ```
 
-**Smart Features:**
-- **Handoff-AI Projects**: Automatically configures to index only `.project/` directory
-- **Performance Tips**: Shows installation commands for better embedding engines
-- **Branch Safety**: Guides you to create proper main branch baseline first
+**Interactive Setup:**
+- **Engine Choice**: Choose Rust, Python, or Node.js with availability checking
+- **Smart Validation**: Checks if your chosen engine is available and provides install guidance
+- **Organized Context**: Requires structured project context (`.project/`, `docs/`, etc.)
+- **Educational Guidance**: Teaches best practices for AI-ready project organization
 
 ### Usage (AI Agents)
 ```bash
@@ -92,29 +113,58 @@ LLM: Project-specific response using your actual patterns
 
 ## 🧠 Smart Features
 
-### 🔄 Cascading Embedding Engines
-Context-rag automatically detects and uses the best available embedding engine:
-
-1. **🦀 Rust** (fastest) - Uses compiled embedder for maximum speed
-2. **🐍 Python** (recommended) - High-quality embeddings with sentence-transformers  
-3. **📦 Node.js** (fallback) - Enhanced keyword-based embeddings, always works
+### 🎛️ Interactive Engine Selection
+Context-rag lets you choose your preferred embedding engine with smart validation:
 
 ```bash
 context-rag init
-# 🔍 Auto-detecting embedding engine...
-# ✅ Using Python embedder (good performance)
-# 💡 Performance Tip: Install Rust for fastest performance
+
+🔧 Choose your embedding engine:
+  1. Rust - Fastest performance (recommended)
+  2. Python - High-quality embeddings with sentence-transformers
+  3. Node.js - Always works, basic functionality
+
+Enter your choice (1-3): 2
+
+Checking Python availability...
+✅ Python + sentence-transformers ready
 ```
 
-### 🎯 Handoff-AI Integration
-Automatically detects and optimizes for handoff-ai projects:
+**Smart Validation:**
+- **Availability Checking**: Verifies if your chosen engine is installed
+- **Install Guidance**: Provides exact commands to install missing dependencies
+- **Fallback Options**: Shows alternatives if your first choice isn't available
+- **Performance Tips**: Explains the benefits of each engine
+
+### 📚 Organized Context Requirement
+Context-rag encourages proper project organization for optimal AI results:
 
 ```bash
-# If .project/ directory exists with context files:
+# Without organized context:
 context-rag init
-# 🎯 Handoff-AI detected!
+# ⚠️  No organized project context found!
+# 
+# 📋 Recommended approach:
+#   1. Use handoff-ai (recommended):
+#      npm install -g handoff-ai
+#      handoff-ai init
+#   
+#   2. Or create .project/ directory manually with:
+#      - overview.md (project summary)
+#      - architecture.md (technical architecture)
+#      - context.md (key patterns and decisions)
+
+# With organized context:
+context-rag init
+# 🎯 Handoff-AI context detected!
 # Configured to index .project/ directory for optimal context
 ```
+
+**Smart Context Detection:**
+- **Handoff-AI Projects**: Auto-detects `.project/` directories
+- **Documentation Folders**: Recognizes `docs/`, `.docs/`, `context/` directories
+- **Educational Guidance**: Teaches users to organize project information
+- **Flexible Configuration**: Allows custom include/exclude paths
 
 ### 🛡️ Branch Safety
 Prevents common indexing mistakes:
