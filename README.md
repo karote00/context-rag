@@ -19,7 +19,7 @@ A lightweight CLI tool that helps AI agents understand your project by providing
 - **🔌 Universal Compatibility**: Works with any AI service (OpenAI, Claude, Gemini, local models)
 - **🎛️ Interactive Setup**: Choose your preferred engine with smart validation and guidance
 - **🚀 Cascading Performance**: Rust → Python → Node.js with availability checking
-- **📚 Organized Context**: Encourages structured project documentation for better AI results
+- **📚 Smart Context**: Auto-detects organized documentation, works with any structure
 - **🎯 Smart Integration**: Auto-detects handoff-ai, docs/, and other context directories
 - **🌿 Branch-Aware**: Automatic git branch detection and caching
 - **🛡️ Branch Safety**: Prevents indexing mistakes with smart baseline enforcement
@@ -53,8 +53,8 @@ context-rag index         # Smart: run from main branch first for proper baselin
 **Interactive Setup:**
 - **Engine Choice**: Choose Rust, Python, or Node.js with availability checking
 - **Smart Validation**: Checks if your chosen engine is available and provides install guidance
-- **Organized Context**: Requires structured project context (`.project/`, `docs/`, etc.)
-- **Educational Guidance**: Teaches best practices for AI-ready project organization
+- **Clear Actions**: Single ACTION_REQUIRED section when dependencies are missing
+- **Flexible Context**: Works with any project structure, suggests organization improvements
 
 ### Usage (AI Agents)
 ```bash
@@ -117,35 +117,28 @@ Checking Python availability...
 - **Fallback Options**: Shows alternatives if your first choice isn't available
 - **Performance Tips**: Explains the benefits of each engine
 
-### 📚 Organized Context Requirement
-Context-rag encourages proper project organization for optimal AI results:
+### 📚 Smart Context Detection
+Context-rag automatically detects and optimizes for organized project documentation:
 
 ```bash
-# Without organized context:
-context-rag init
-# ⚠️  No organized project context found!
-# 
-# 📋 Recommended approach:
-#   1. Use handoff-ai (recommended):
-#      npm install -g handoff-ai
-#      handoff-ai init
-#   
-#   2. Or create .project/ directory manually with:
-#      - overview.md (project summary)
-#      - architecture.md (technical architecture)
-#      - context.md (key patterns and decisions)
-
 # With organized context:
 context-rag init
-# 🎯 Handoff-AI context detected!
-# Configured to index .project/ directory for optimal context
+# ✅ Handoff-AI context detected
+# ✅ Rust is ready
+# ✅ Context-RAG initialized successfully!
+
+# Without organized context:
+context-rag init
+# ⚠️  No organized project context found
+# Consider creating .project/ directory with project documentation
+# ✅ Context-RAG initialized successfully!
 ```
 
-**Smart Context Detection:**
-- **Handoff-AI Projects**: Auto-detects `.project/` directories
-- **Documentation Folders**: Recognizes `docs/`, `.docs/`, `context/` directories
-- **Educational Guidance**: Teaches users to organize project information
-- **Flexible Configuration**: Allows custom include/exclude paths
+**Smart Detection Features:**
+- **Auto-detects**: `.project/`, `docs/`, `.docs/`, `context/` directories
+- **Flexible Configuration**: Customize include/exclude paths in config
+- **Works Everywhere**: Functions with any project structure
+- **Optimization Tips**: Suggests improvements without blocking setup
 
 ### 🛡️ Branch Safety
 Prevents common indexing mistakes:
