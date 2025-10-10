@@ -2,25 +2,6 @@
 
 **Get relevant project context for AI agents to save 90% of tokens.**
 
-## 🌟 The Vision: A Win-Win AI Ecosystem
-
-Context-rag creates a sustainable AI ecosystem that benefits everyone:
-
-**🎯 For Developers & AI Agents:**
-- **Laser-focused accuracy**: AI gets only relevant context, leading to more precise and project-specific responses
-- **Extended capabilities**: Save 90% on tokens means 10x more tasks within rate limits and budgets
-- **Better outcomes**: Quality over quantity - AI works with curated, meaningful context instead of noise
-
-**💡 For AI Companies:**
-- **Reduced infrastructure costs**: Process 90% fewer tokens while delivering better results
-- **Sustainable scaling**: Efficient token usage enables serving more users with existing resources
-- **Enhanced service quality**: Focused context leads to higher customer satisfaction
-
-**🚀 The Win-Win Result:**
-Users accomplish more with AI, AI companies reduce costs, and everyone benefits from a more efficient, sustainable AI ecosystem. Context-rag isn't just about saving tokens—it's about creating smarter interactions that work better for everyone.
-
----
-
 A lightweight CLI tool that helps AI agents understand your project by providing focused context instead of sending entire codebases.
 
 ---
