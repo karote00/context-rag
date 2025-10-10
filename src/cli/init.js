@@ -214,9 +214,10 @@ function createToolManifest() {
   console.log(chalk.green('Created tool info for AI integration'));
 }
 
-async function initCommand() {
+async function initCommand(options = {}) {
   const configPath = '.context-rag.config.json';
   const cacheDir = '.context-rag';
+  const jsonOutput = options.json;
   
   try {
     // Check if config already exists
@@ -236,25 +237,12 @@ async function initCommand() {
     const contextInfo = detectProjectContext();
     
     if (!contextInfo) {
-      // No organized context found - educate the user
-      console.log(chalk.yellow('⚠️  No organized project context found!'));
-      console.log(chalk.gray(''));
-      console.log(chalk.gray('Context-RAG works best with organized project context.'));
-      console.log(chalk.gray('This ensures AI gets high-quality, relevant information instead of scattered files.'));
-      console.log(chalk.gray(''));
-      console.log(chalk.blue('📋 Recommended approach:'));
-      console.log(chalk.cyan('  1. Use handoff-ai (recommended):'));
-      console.log(chalk.gray('     npm install -g handoff-ai'));
-      console.log(chalk.gray('     handoff-ai init'));
-      console.log(chalk.gray(''));
-      console.log(chalk.cyan('  2. Or create .project/ directory manually with:'));
-      console.log(chalk.gray('     - overview.md (project summary)'));
-      console.log(chalk.gray('     - architecture.md (technical architecture)'));
-      console.log(chalk.gray('     - context.md (key patterns and decisions)'));
-      console.log(chalk.gray(''));
-      console.log(chalk.gray('After organizing your context, run "context-rag init" again.'));
-      console.log(chalk.gray('You can also edit the "include" paths in .context-rag.config.json manually.'));
-      console.log(chalk.gray(''));
+      // No organized context found - provide clear action
+      console.log(chalk.yellow('⚠️  No organized project context found'));
+      console.log('\n' + chalk.cyan('ACTION_REQUIRED:'));
+      console.log(chalk.white('npm install -g handoff-ai && handoff-ai init'));
+      console.log(chalk.gray('Or create .project/ directory with overview.md, architecture.md, context.md'));
+      console.log(chalk.gray('Then run: context-rag init'));
     }
 
     // Ask user to choose embedding engine
@@ -283,17 +271,21 @@ async function initCommand() {
     console.log(chalk.gray(`\nChecking ${chosenEngine.name} availability...`));
     const availability = await checkEngineAvailability(chosenEngine.value);
     
+    // Store the action required for exit code determination
+    let actionRequired = false;
+    
     if (availability.available) {
-      console.log(chalk.green(`✅ ${availability.message}`));
+      console.log(chalk.green(`✅ ${chosenEngine.name} is ready`));
     } else {
-      console.log(chalk.yellow(`⚠️  ${availability.message}`));
+      actionRequired = true;
+      console.log(chalk.yellow(`⚠️  ${chosenEngine.name} requires installation`));
+      
+      // Output structured action for AI agents
+      console.log('\n' + chalk.cyan('ACTION_REQUIRED:'));
       if (availability.suggestion) {
-        console.log(chalk.cyan(`   Install: ${availability.suggestion}`));
+        console.log(chalk.white(availability.suggestion));
       }
-      if (availability.fallback) {
-        console.log(chalk.gray(`   Fallback: ${availability.fallback}`));
-      }
-      console.log(chalk.gray('   Continuing with this choice - you can install dependencies later.'));
+      console.log(chalk.gray('Run the above command, then continue with context-rag setup.'));
     }
 
     // Create configuration
@@ -305,13 +297,10 @@ async function initCommand() {
     
     if (contextInfo) {
       if (contextInfo.type === 'handoff-ai') {
-        console.log(chalk.blue('🎯 Handoff-AI context detected!'));
-        console.log(chalk.gray('   Configured to index .project/ directory for optimal context'));
+        console.log(chalk.green('✅ Handoff-AI context detected'));
       } else {
-        console.log(chalk.blue(`🎯 Organized context detected: ${contextInfo.name}`));
-        console.log(chalk.gray(`   Configured to index ${contextInfo.path} directory`));
+        console.log(chalk.green(`✅ Organized context detected: ${contextInfo.name}`));
       }
-      console.log(chalk.gray('   You can modify "include" paths in .context-rag.config.json if needed'));
     }
 
     // Create tool info for AI integration
@@ -326,29 +315,70 @@ async function initCommand() {
       }
     });
 
-    if (contextInfo) {
-      console.log(chalk.blue('\n✨ Context-RAG initialized successfully!'));
-      console.log(chalk.gray('Next steps:'));
-      console.log(chalk.gray('  1. Run "context-rag index" to build your project index'));
-      console.log(chalk.gray('     📝 Note: First index should be run from main branch for proper branch-aware caching'));
-      console.log(chalk.gray('  2. AI agents can now call "context-rag ai <question>" for context'));
-      console.log(chalk.gray('  3. Enjoy 90% token savings with project-specific responses!'));
-    } else {
-      console.log(chalk.yellow('\n⚠️  Context-RAG initialized with default configuration.'));
-      console.log(chalk.gray('Please organize your project context first for optimal results.'));
+    // Determine final status and exit code
+    let exitCode = 0;
+    let status = 'success';
+    let actions = [];
+    
+    if (!availability.available && availability.suggestion) {
+      actions.push({
+        type: 'install_engine',
+        command: availability.suggestion,
+        description: `Install ${chosenEngine.name} engine`
+      });
     }
     
-    // Show additional tips based on chosen engine availability
-    if (!availability.available) {
-      console.log(chalk.yellow('\n💡 To get optimal performance:'));
-      if (availability.suggestion) {
-        console.log(chalk.cyan(`   ${availability.suggestion}`));
-      }
-      if (availability.fallback) {
-        console.log(chalk.gray(`   Or ${availability.fallback.toLowerCase()}`));
-      }
-      console.log(chalk.gray('   Context-RAG will work with any engine, but faster engines give better performance.'));
+    if (!contextInfo) {
+      actions.push({
+        type: 'organize_context',
+        command: 'npm install -g handoff-ai && handoff-ai init',
+        description: 'Create organized project context'
+      });
     }
+    
+    if (actions.length > 0) {
+      exitCode = 2; // Success with action required
+      status = 'action_required';
+    }
+    
+    if (jsonOutput) {
+      // JSON output for AI agents
+      const result = {
+        status,
+        exit_code: exitCode,
+        engine: {
+          chosen: chosenEngine.value,
+          available: availability.available
+        },
+        context: {
+          detected: !!contextInfo,
+          type: contextInfo?.type || null,
+          path: contextInfo?.path || null
+        },
+        actions,
+        next_command: actions.length === 0 ? 'context-rag index' : null
+      };
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      // Human-readable output
+      if (contextInfo && availability.available) {
+        console.log(chalk.green('\n✅ Context-RAG initialized successfully!'));
+        console.log(chalk.gray('Ready to run: context-rag index'));
+      } else {
+        console.log(chalk.yellow('\n⚠️  Context-RAG initialized - setup incomplete'));
+        if (actions.length > 0) {
+          console.log(chalk.cyan('\nACTIONS_REQUIRED:'));
+          actions.forEach(action => {
+            console.log(chalk.white(`${action.command}`));
+            console.log(chalk.gray(`# ${action.description}`));
+          });
+        }
+        console.log(chalk.gray('\nAfter completing actions, run: context-rag index'));
+      }
+    }
+    
+    // Exit with appropriate code for AI agents
+    process.exit(exitCode);
     
   } catch (error) {
     console.error(chalk.red('Error during initialization:'), error.message);

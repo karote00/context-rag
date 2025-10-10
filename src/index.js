@@ -20,6 +20,7 @@ program
 program
   .command('init')
   .description('Initialize context-rag configuration in current directory')
+  .option('--json', 'Output structured JSON for AI agents')
   .action(initCommand);
 
 // Index command
