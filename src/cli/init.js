@@ -237,12 +237,10 @@ async function initCommand(options = {}) {
     const contextInfo = detectProjectContext();
     
     if (!contextInfo) {
-      // No organized context found - provide clear action
+      // No organized context found - just inform, don't require action
       console.log(chalk.yellow('⚠️  No organized project context found'));
-      console.log('\n' + chalk.cyan('ACTION_REQUIRED:'));
-      console.log(chalk.white('npm install -g handoff-ai && handoff-ai init'));
-      console.log(chalk.gray('Or create .project/ directory with overview.md, architecture.md, context.md'));
-      console.log(chalk.gray('Then run: context-rag init'));
+      console.log(chalk.gray('Consider creating .project/ directory with project documentation'));
+      console.log(chalk.gray('You can modify "include" paths in .context-rag.config.json'));
     }
 
     // Ask user to choose embedding engine
@@ -279,13 +277,6 @@ async function initCommand(options = {}) {
     } else {
       actionRequired = true;
       console.log(chalk.yellow(`⚠️  ${chosenEngine.name} requires installation`));
-      
-      // Output structured action for AI agents
-      console.log('\n' + chalk.cyan('ACTION_REQUIRED:'));
-      if (availability.suggestion) {
-        console.log(chalk.white(availability.suggestion));
-      }
-      console.log(chalk.gray('Run the above command, then continue with context-rag setup.'));
     }
 
     // Create configuration
@@ -328,14 +319,6 @@ async function initCommand(options = {}) {
       });
     }
     
-    if (!contextInfo) {
-      actions.push({
-        type: 'organize_context',
-        command: 'npm install -g handoff-ai && handoff-ai init',
-        description: 'Create organized project context'
-      });
-    }
-    
     if (actions.length > 0) {
       exitCode = 2; // Success with action required
       status = 'action_required';
@@ -361,19 +344,19 @@ async function initCommand(options = {}) {
       console.log(JSON.stringify(result, null, 2));
     } else {
       // Human-readable output
-      if (contextInfo && availability.available) {
+      if (availability.available) {
         console.log(chalk.green('\n✅ Context-RAG initialized successfully!'));
         console.log(chalk.gray('Ready to run: context-rag index'));
       } else {
-        console.log(chalk.yellow('\n⚠️  Context-RAG initialized - setup incomplete'));
+        console.log(chalk.yellow('\n⚠️  Context-RAG initialized - engine installation required'));
         if (actions.length > 0) {
-          console.log(chalk.cyan('\nACTIONS_REQUIRED:'));
+          console.log(chalk.cyan('\nACTION_REQUIRED:'));
           actions.forEach(action => {
             console.log(chalk.white(`${action.command}`));
             console.log(chalk.gray(`# ${action.description}`));
           });
         }
-        console.log(chalk.gray('\nAfter completing actions, run: context-rag index'));
+        console.log(chalk.gray('\nAfter installation, run: context-rag index'));
       }
     }
     
