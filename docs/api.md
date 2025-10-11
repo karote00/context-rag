@@ -33,9 +33,8 @@ context-rag index --force            # Force rebuild existing index
 Search project context using natural language.
 
 ```bash
-context-rag query "authentication middleware"
-context-rag query "database connection" --json
-context-rag ai "how to implement authentication"
+context-rag query "authentication middleware"        # Interactive mode
+context-rag query "database connection" --json      # Clean JSON mode
 ```
 
 **Arguments:**
@@ -43,7 +42,12 @@ context-rag ai "how to implement authentication"
 
 **Options:**
 - `-k, --top-k <number>` - Number of results to return (default: 5)
-- `--json` - Output results in JSON format
+- `--json` - Output clean JSON format (for programmatic use)
+
+**Output Modes:**
+- **Interactive mode** (default): Colorful output with hints and suggestions
+- **JSON mode** (`--json` flag): Clean JSON output, no extra text or colors
+- **Programmatic use**: Use `--json` flag for AI agents and scripts
 
 ### `context-rag watch`
 
@@ -83,7 +87,7 @@ context-rag status --json            # JSON status output
 
 ### `context-rag ai <query>`
 
-Get project context for AI agents with token-efficient JSON output.
+Get project context for AI agents with clean JSON output.
 
 ```bash
 context-rag ai "explain the architecture"
@@ -95,6 +99,12 @@ context-rag ai "how to implement authentication"
 
 **Options:**
 - `-k, --top-k <number>` - Number of results to return (default: 5)
+
+**Output Behavior:**
+- **Always outputs clean JSON** - no hints, colors, or extra text
+- **Structured error responses** with error codes
+- **Direct stdout output** - ready for parsing by AI agents
+- **No console noise** - only the JSON response reaches stdout
 
 **Purpose:** AI agents call this command to get relevant project context instead of sending entire codebase, achieving 90% token savings.
 
@@ -194,34 +204,62 @@ Monitors file system for changes and incrementally updates the index.
 }
 ```
 
-### AI Response
+### AI Response (Clean JSON)
 
 ```json
 {
   "status": "success",
   "context": {
     "query": "explain the architecture",
-    "total_results": 5,
-    "context_sources": 2,
-    "code_sources": 3,
-    "structured_context": [
-      {
-        "type": "architecture",
-        "content": "The system follows a microservices architecture...",
-        "relevance": 0.95,
-        "source": ".project/architecture.md"
-      }
-    ],
+    "context_summary": "Found 5 relevant sources including architecture docs and code files",
     "code_context": [
+      {
+        "file": ".project/architecture.md",
+        "snippet": "The system follows a microservices architecture...",
+        "relevance": 0.95
+      },
       {
         "file": "src/app.js",
         "snippet": "const app = express(); ...",
         "relevance": 0.87
       }
     ],
-    "context_summary": "Found 5 relevant sources including structured context (architecture) and code files (js)",
-    "timestamp": "2024-01-01T12:00:00.000Z"
-  }
+    "total_results": 5
+  },
+  "timestamp": "2024-01-01T12:00:00.000Z"
+}
+```
+
+### Query JSON Response (Clean)
+
+```json
+{
+  "status": "success",
+  "query": "authentication middleware",
+  "results": [
+    {
+      "file_path": "src/middleware/auth.js",
+      "content": "const authenticate = (req, res, next) => { ... }",
+      "snippet": "const authenticate = (req, res, next) => { ... }",
+      "similarity": 0.95,
+      "chunk_index": 0,
+      "is_context": false
+    }
+  ],
+  "total_results": 1,
+  "timestamp": "2024-01-01T12:00:00.000Z"
+}
+```
+
+### Error Response (Clean)
+
+```json
+{
+  "status": "error",
+  "message": "Index not found. Run 'context-rag index' to create an index first.",
+  "error_code": "INDEX_NOT_FOUND",
+  "results": [],
+  "timestamp": "2024-01-01T12:00:00.000Z"
 }
 ```
 

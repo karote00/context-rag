@@ -37,7 +37,9 @@ LLM: Project-specific response using actual codebase patterns
 context-rag ai "user's question here"
 ```
 
-### **Response Format**
+### **Clean JSON Output**
+The `ai` command **always outputs clean JSON** - no hints, colors, or extra text that needs parsing:
+
 ```json
 {
   "status": "success",
@@ -50,8 +52,21 @@ context-rag ai "user's question here"
         "snippet": "function authenticateUser(req, res, next) {...}",
         "relevance": 0.95
       }
-    ]
-  }
+    ],
+    "total_results": 5
+  },
+  "timestamp": "2024-01-01T12:00:00.000Z"
+}
+```
+
+### **Error Response Format**
+```json
+{
+  "status": "error",
+  "message": "Index not found. Run 'context-rag index' first.",
+  "error_code": "INDEX_NOT_FOUND",
+  "context": null,
+  "timestamp": "2024-01-01T12:00:00.000Z"
 }
 ```
 
@@ -61,9 +76,9 @@ async function handleUserQuery(userQuery) {
   // Check if this is a project-specific question
   if (isProjectQuestion(userQuery)) {
     try {
-      // Get project context
+      // Get clean project context (always pure JSON)
       const { stdout } = await exec(`context-rag ai "${userQuery}"`);
-      const result = JSON.parse(stdout);
+      const result = JSON.parse(stdout); // Always valid JSON, no parsing needed
       
       if (result.status === 'success') {
         // Send question + context to LLM
@@ -71,9 +86,13 @@ async function handleUserQuery(userQuery) {
           prompt: userQuery,
           context: result.context
         });
+      } else {
+        // Handle structured error
+        console.log(`Context error: ${result.message}`);
       }
     } catch (error) {
       // Fallback to general response
+      console.log(`Context-rag error: ${error.message}`);
     }
   }
   
@@ -106,3 +125,6 @@ Then AI agents automatically get project context for better responses with massi
 - **Universal compatibility** with any AI service
 - **Zero user configuration** after initial setup
 - **Automatic context discovery** from actual codebase
+- **Clean JSON output** - no parsing required, direct consumption
+- **Structured error handling** - predictable error responses
+- **No console noise** - only the data you need reaches stdout

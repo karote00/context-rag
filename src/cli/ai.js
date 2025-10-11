@@ -1,21 +1,31 @@
 const { loadConfig } = require('../services/config');
 const { APIService } = require('../services/api');
+const { withSilentModeAsync } = require('../utils/silent-mode');
 
 async function aiCommand(query, options = {}) {
   try {
-    // Load configuration
-    const config = await loadConfig();
+    // Load configuration silently (AI command always uses clean output)
+    const config = await loadConfig({ silent: true });
     if (!config) {
+      // Return structured error for missing config
+      const errorResponse = {
+        status: 'error',
+        message: 'Configuration not found. Run "context-rag init" first.',
+        error_code: 'CONFIG_NOT_FOUND',
+        context: null,
+        timestamp: new Date().toISOString()
+      };
+      console.log(JSON.stringify(errorResponse, null, 2));
       process.exit(1);
     }
 
     const topK = parseInt(options.topK) || config.search.top_k || 5;
     
-    // Initialize API service
-    const apiService = new APIService(config);
-    
-    // Perform search
-    const apiResult = await apiService.query(query, { topK });
+    // Perform search with silent mode to suppress any potential output from API service
+    const apiResult = await withSilentModeAsync(async () => {
+      const apiService = new APIService(config);
+      return await apiService.query(query, { topK });
+    }, true);
     
     // Format for AI consumption - optimized for token efficiency
     const aiResponse = {
@@ -30,18 +40,21 @@ async function aiCommand(query, options = {}) {
         })),
         total_results: apiResult.total_results
       },
-      message: apiResult.error || undefined
+      message: apiResult.error || undefined,
+      timestamp: new Date().toISOString()
     };
     
     // Always output JSON for AI consumption
     console.log(JSON.stringify(aiResponse, null, 2));
     
   } catch (error) {
-    // Always return structured error for AI
+    // Always return structured error for AI with error codes
     const errorResponse = {
       status: 'error',
       message: error.message,
-      context: null
+      error_code: 'SYSTEM_ERROR',
+      context: null,
+      timestamp: new Date().toISOString()
     };
     
     console.log(JSON.stringify(errorResponse, null, 2));

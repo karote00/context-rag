@@ -1,62 +1,67 @@
 const chalk = require('chalk');
 const { loadConfig } = require('../services/config');
 const { APIService } = require('../services/api');
+const { withSilentModeAsync } = require('../utils/silent-mode');
 
 async function queryCommand(query, options = {}) {
+  const isCleanMode = options.json;
+  
   try {
-    // Load configuration
-    const config = await loadConfig();
+    // Load configuration (silent mode when using --json flag)
+    const config = await loadConfig({ silent: isCleanMode });
     if (!config) {
+      if (isCleanMode) {
+        // Return structured error for missing config in JSON mode
+        const errorResponse = {
+          status: 'error',
+          message: 'Configuration not found. Run "context-rag init" first.',
+          error_code: 'CONFIG_NOT_FOUND',
+          results: [],
+          timestamp: new Date().toISOString()
+        };
+        console.log(JSON.stringify(errorResponse, null, 2));
+      }
       process.exit(1);
     }
 
     const topK = parseInt(options.topK) || config.search.top_k || 5;
     
-    // Initialize API service
-    const apiService = new APIService(config);
-    
-    // Check if index exists
-    const indexStatus = await apiService.getIndexStatus();
-    if (!indexStatus.cache_exists) {
-      if (options.json) {
-        console.log(JSON.stringify({
-          error: 'Index not found',
-          message: 'Run "context-rag index" to create an index first',
-          results: []
-        }, null, 2));
-      } else {
-        console.log(chalk.yellow('⚠️  Index not found'));
-        console.log(chalk.gray('Run "context-rag index" to create an index first.'));
+    // Perform operations with silent mode when in JSON mode
+    const { apiService, indexStatus, apiResult } = await withSilentModeAsync(async () => {
+      const apiService = new APIService(config);
+      const indexStatus = await apiService.getIndexStatus();
+      
+      if (!indexStatus.cache_exists) {
+        throw new Error('INDEX_NOT_FOUND');
       }
-      process.exit(1);
-    }
-    
-    // Perform search via API
-    const apiResult = await apiService.query(query, { topK });
-    
-    if (apiResult.error) {
-      if (options.json) {
-        console.log(JSON.stringify(apiResult, null, 2));
-      } else {
-        console.error(chalk.red(`❌ Error: ${apiResult.error}`));
+      
+      const apiResult = await apiService.query(query, { topK });
+      
+      if (apiResult.error) {
+        throw new Error(apiResult.error);
       }
-      process.exit(1);
-    }
+      
+      return { apiService, indexStatus, apiResult };
+    }, isCleanMode);
+
     
-    if (apiResult.results.length === 0) {
-      if (options.json) {
-        console.log(JSON.stringify(apiResult, null, 2));
-      } else {
+    if (isCleanMode) {
+      // Clean JSON output mode
+      const cleanResponse = {
+        status: 'success',
+        query: apiResult.query,
+        results: apiResult.results,
+        total_results: apiResult.total_results,
+        timestamp: new Date().toISOString()
+      };
+      console.log(JSON.stringify(cleanResponse, null, 2));
+    } else {
+      // Interactive mode with helpful hints and colors
+      if (apiResult.results.length === 0) {
         console.log(chalk.yellow('🔍 No relevant results found.'));
         console.log(chalk.gray('💡 Try different keywords or check if your index is up to date.'));
+        return;
       }
-      return;
-    }
-
-    if (options.json) {
-      // Full API response for JSON mode
-      console.log(JSON.stringify(apiResult, null, 2));
-    } else {
       // Human-friendly output
       const results = apiResult.results;
       console.log(chalk.green(`\n📋 Found ${results.length} relevant results:\n`));
@@ -101,14 +106,32 @@ async function queryCommand(query, options = {}) {
     }
     
   } catch (error) {
-    if (options.json) {
-      console.log(JSON.stringify({
-        error: error.message,
+    if (isCleanMode) {
+      // Structured error response for JSON mode
+      let errorCode = 'SYSTEM_ERROR';
+      let message = error.message;
+      
+      if (error.message === 'INDEX_NOT_FOUND') {
+        errorCode = 'INDEX_NOT_FOUND';
+        message = 'Index not found. Run "context-rag index" to create an index first.';
+      }
+      
+      const errorResponse = {
+        status: 'error',
+        message: message,
+        error_code: errorCode,
         results: [],
         timestamp: new Date().toISOString()
-      }, null, 2));
+      };
+      console.log(JSON.stringify(errorResponse, null, 2));
     } else {
-      console.error(chalk.red('❌ Error during search:'), error.message);
+      // Interactive error display
+      if (error.message === 'INDEX_NOT_FOUND') {
+        console.log(chalk.yellow('⚠️  Index not found'));
+        console.log(chalk.gray('Run "context-rag index" to create an index first.'));
+      } else {
+        console.error(chalk.red('❌ Error during search:'), error.message);
+      }
     }
     process.exit(1);
   }

@@ -54,12 +54,18 @@ context-rag query "architecture overview" --json
 context-rag ai "explain the main components"
 ```
 
-### JSON Output for AI Integration
+### Clean Output for AI Integration
 
 ```bash
-context-rag query "user management" --json
-context-rag ai "API endpoints overview"
-context-rag status --json
+# AI command always outputs clean JSON
+context-rag ai "user management patterns"
+
+# Query command with --json flag for clean output  
+context-rag query "API endpoints" --json
+
+# Interactive vs Clean output comparison:
+context-rag query "auth"        # 🎨 Colors, hints, suggestions
+context-rag query "auth" --json # 📄 Pure JSON, no extra text
 ```
 
 ### Branch-Aware Caching
@@ -94,6 +100,45 @@ Shows:
 - Branch information
 - Context detection (project context)
 - Configuration summary
+
+## Output Modes
+
+### Interactive Mode (Human-Friendly)
+```bash
+context-rag query "authentication logic"
+# 📋 Found 3 relevant results:
+# 
+# 1. 🎯 src/auth/middleware.js
+#    Similarity: 95.2% | Chunk: 0
+#    const authenticate = (req, res, next) => {
+# 
+# 💡 Showing top 5 results. Use --top-k to see more.
+```
+
+### Clean JSON Mode (AI-Friendly)
+```bash
+context-rag query "authentication logic" --json
+# {
+#   "status": "success",
+#   "query": "authentication logic",
+#   "results": [
+#     {
+#       "file_path": "src/auth/middleware.js",
+#       "snippet": "const authenticate = (req, res, next) => {",
+#       "similarity": 0.952
+#     }
+#   ],
+#   "total_results": 3,
+#   "timestamp": "2024-01-01T12:00:00.000Z"
+# }
+```
+
+### AI Command (Always Clean)
+```bash
+context-rag ai "how does authentication work"
+# Always outputs clean JSON - no --json flag needed
+# Perfect for AI agents and programmatic use
+```
 
 ## Common Workflows
 

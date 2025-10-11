@@ -6,12 +6,17 @@ const CONFIG_FILE = '.context-rag.config.json';
 
 /**
  * Load and validate configuration file
+ * @param {Object} options - Loading options
+ * @param {boolean} options.silent - Suppress console output when true
  * @returns {Object|null} Configuration object or null if not found
  */
-async function loadConfig() {
+async function loadConfig(options = {}) {
+  const { silent = false } = options;
   try {
     if (!fs.existsSync(CONFIG_FILE)) {
-      console.log(chalk.yellow('⚠️  No configuration found. Run "context-rag init" first.'));
+      if (!silent) {
+        console.log(chalk.yellow('⚠️  No configuration found. Run "context-rag init" first.'));
+      }
       return null;
     }
 
@@ -33,11 +38,13 @@ async function loadConfig() {
     }
 
     if (missingFields.length > 0) {
-      console.error(chalk.red('❌ Configuration validation failed:'));
-      missingFields.forEach(field => {
-        console.error(chalk.red(`   Missing required field: ${field}`));
-      });
-      console.log(chalk.yellow('💡 Run "context-rag init" to regenerate configuration'));
+      if (!silent) {
+        console.error(chalk.red('❌ Configuration validation failed:'));
+        missingFields.forEach(field => {
+          console.error(chalk.red(`   Missing required field: ${field}`));
+        });
+        console.log(chalk.yellow('💡 Run "context-rag init" to regenerate configuration'));
+      }
       return null;
     }
 
@@ -45,16 +52,20 @@ async function loadConfig() {
     const cacheDir = path.dirname(config.storage.path);
     if (!fs.existsSync(cacheDir)) {
       fs.mkdirSync(cacheDir, { recursive: true });
-      console.log(chalk.green(`Created cache directory: ${cacheDir}`));
+      if (!silent) {
+        console.log(chalk.green(`Created cache directory: ${cacheDir}`));
+      }
     }
 
     return config;
     
   } catch (error) {
     if (error instanceof SyntaxError) {
-      console.error(chalk.red('❌ Invalid JSON in configuration file:'));
-      console.error(chalk.red(`   ${error.message}`));
-      console.log(chalk.yellow('💡 Check your .context-rag.config.json file'));
+      if (!silent) {
+        console.error(chalk.red('❌ Invalid JSON in configuration file:'));
+        console.error(chalk.red(`   ${error.message}`));
+        console.log(chalk.yellow('💡 Check your .context-rag.config.json file'));
+      }
       return null;
     }
     throw error;

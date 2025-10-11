@@ -59,17 +59,21 @@ context-rag index         # Smart: run from main branch first for proper baselin
 
 ### Usage (AI Agents)
 ```bash
-# AI agents call this to get project context
+# AI agents call this to get clean JSON context (no parsing needed)
 context-rag ai "how to implement authentication"
-context-rag ai "explain the project structure"
+context-rag ai "explain the project structure"  
 context-rag ai "how to add new API endpoint"
+
+# Always outputs clean JSON - ready for direct consumption
+# No hints, colors, or extra text to filter out
 ```
 
 ### Manual Usage
 ```bash
-context-rag query "authentication middleware"
-context-rag status                  # Check index status, embedding engine, integrations
-context-rag branch --list           # Manage branch-specific caches
+context-rag query "authentication middleware"      # Interactive mode (colors, hints)
+context-rag query "auth middleware" --json         # Clean JSON mode (for scripts)
+context-rag status                                  # Check index status, embedding engine
+context-rag branch --list                           # Manage branch-specific caches
 ```
 
 ## 💡 How It Works
