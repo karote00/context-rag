@@ -23,26 +23,30 @@ This creates:
 
 ## 3. Build Your First Index
 
-Index your project files:
+Index your project files (branch-aware):
 
 ```bash
 context-rag index
 ```
 
-This will:
-- Scan files matching your include patterns
-- Create semantic chunks
-- Generate embeddings (if Python dependencies available)
-- Store everything in a searchable index
+**What happens:**
+- **Main branch**: Indexes project context (docs/, .project/, README.md)
+- **Feature branch**: Indexes specs (.kiro/specs/, requirements/, design/)
+- **Smart detection**: Automatically uses appropriate strategy per branch
+- **Clean separation**: No overlap between project knowledge and feature specs
 
-## 4. Search Your Code
+## 4. Search Your Content
 
-Now you can search using natural language:
+Now you can search using natural language (branch-aware):
 
 ```bash
+# On main branch: searches project context
 context-rag query "how to configure the database"
-context-rag query "authentication middleware"
-context-rag query "error handling patterns"
+context-rag query "project architecture"
+
+# On feature branch: searches implementation specs  
+context-rag query "authentication requirements"
+context-rag query "design decisions"
 ```
 
 ## 5. Explore Advanced Features

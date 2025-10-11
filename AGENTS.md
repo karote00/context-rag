@@ -112,11 +112,16 @@ Users just need to:
 ```bash
 npm install -g context-rag
 cd their-project
-context-rag init
-context-rag index
+context-rag init    # Creates context/specs separation automatically
+context-rag index   # Branch-aware: main=project context, feature=specs
 ```
 
-Then AI agents automatically get project context for better responses with massive token savings.
+**Branch Intelligence:**
+- **Main branch**: AI gets project context (docs, architecture, overview)
+- **Feature branch**: AI gets implementation specs (requirements, design, tasks)
+- **Automatic**: No manual configuration needed
+
+Then AI agents automatically get relevant context for better responses with massive token savings.
 
 ## 🎯 Benefits
 

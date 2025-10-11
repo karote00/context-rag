@@ -51,11 +51,11 @@ context-rag init          # Interactive setup with engine selection
 context-rag index         # Smart: run from main branch first for proper baseline
 ```
 
-**Interactive Setup:**
+**Smart Branch-Aware Setup:**
+- **Main Branch**: Indexes project context (docs/, .project/, README.md, architecture)
+- **Feature Branches**: Indexes implementation specs (.kiro/specs/, requirements/, design/)
 - **Engine Choice**: Choose Rust, Python, or Node.js with availability checking
-- **Smart Validation**: Checks if your chosen engine is available and provides install guidance
-- **Clear Actions**: Single ACTION_REQUIRED section when dependencies are missing
-- **Flexible Context**: Works with any project structure, suggests organization improvements
+- **Auto-Configuration**: Separate context/specs paths with sensible defaults
 
 ### Usage (AI Agents)
 ```bash
@@ -70,8 +70,13 @@ context-rag ai "how to add new API endpoint"
 
 ### Manual Usage
 ```bash
+# Branch-aware searching
 context-rag query "authentication middleware"      # Interactive mode (colors, hints)
 context-rag query "auth middleware" --json         # Clean JSON mode (for scripts)
+
+# Main branch: searches project context (docs, architecture)
+# Feature branch: searches specs (requirements, design, tasks)
+
 context-rag status                                  # Check index status, embedding engine
 context-rag branch --list                           # Manage branch-specific caches
 ```
@@ -94,6 +99,41 @@ LLM: Project-specific response using your actual patterns
 ```
 
 **Result: 90% token savings + better answers**
+
+---
+
+## 🎯 Branch-Aware Intelligence
+
+### **Main Branch (Project Context)**
+```bash
+git checkout main
+context-rag index
+# → Indexes: docs/, .project/, README.md, ARCHITECTURE.md
+# → Stable project knowledge baseline
+```
+
+### **Feature Branch (Implementation Specs)**
+```bash
+git checkout feature/auth
+context-rag index  
+# → Indexes: .kiro/specs/, requirements/, design/
+# → Feature-specific implementation docs
+```
+
+### **Smart Configuration**
+```json
+{
+  "context": {
+    "include": [".project/", "docs/", "README.md"]
+  },
+  "specs": {
+    "include": [".kiro/specs/", "requirements/", "design/"],
+    "extensions": [".md", ".txt", ".yaml"]
+  }
+}
+```
+
+**No Overlap**: Clear separation between project knowledge and feature specs
 
 ---
 

@@ -24,6 +24,11 @@ context-rag index ./src              # Index specific directory
 context-rag index --force            # Force rebuild existing index
 ```
 
+**Branch-Aware Indexing:**
+- **Main branch**: Indexes project context (docs/, .project/, README.md)
+- **Feature branches**: Indexes specs (requirements, design, .kiro/specs/)
+- **Automatic detection**: Uses git branch to determine indexing strategy
+
 **Options:**
 - `[path]` - Target directory (default: current directory)
 - `-f, --force` - Force rebuild of existing index
