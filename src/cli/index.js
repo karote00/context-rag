@@ -5,6 +5,8 @@ const { loadConfig } = require('../services/config');
 const { ContextRagIndexer } = require('../services/indexer');
 const { GitService } = require('../services/git');
 const { ContextService } = require('../services/context');
+const { ContextIndexer } = require('../services/context-indexer');
+const { ContextMonitor } = require('../services/context-monitor');
 
 async function indexCommand(targetPath = '.', options = {}) {
   try {
@@ -22,7 +24,11 @@ async function indexCommand(targetPath = '.', options = {}) {
     // Initialize services
     const gitService = new GitService(config);
     const contextService = new ContextService(config);
-    const currentBranch = await gitService.getCurrentBranch();
+    const contextIndexer = new ContextIndexer(config);
+    const contextMonitor = new ContextMonitor(config);
+    
+    // Detect and handle branch changes
+    const currentBranch = await gitService.detectAndHandleBranchChange();
     
     if (currentBranch) {
       console.log(chalk.blue(`🌿 Current branch: ${currentBranch}`));
@@ -47,16 +53,18 @@ async function indexCommand(targetPath = '.', options = {}) {
         process.exit(1);
       }
       
-      // Try to merge cache from base branch if this is a feature branch
-      if (!options.force && currentBranch !== 'main' && currentBranch !== 'master') {
-        await gitService.mergeCacheFromBase('main');
-      }
     }
 
-    // Check for project context
-    const contextInfo = await contextService.detectProjectContext();
-    if (contextInfo) {
-      console.log(chalk.green(`🎯 Using structured context index (${contextInfo.totalFiles} context files)`));
+    // Check for context files using new context monitor
+    const contextDiscovery = await contextMonitor.discoverContextFiles();
+    const hasContextFiles = contextDiscovery.totalFiles > 0;
+    
+    if (hasContextFiles) {
+      console.log(chalk.green(`🎯 Found ${contextDiscovery.totalFiles} context files in ${contextDiscovery.directories.length} directories`));
+      console.log(chalk.gray(`   Context types: ${Array.from(contextDiscovery.contextTypes).join(', ')}`));
+    } else {
+      console.log(chalk.yellow('⚠️  No context files found'));
+      console.log(chalk.gray('Consider adding .kiro/specs/, .project/, or docs/ directories'));
     }
 
     // Get branch-specific cache path
@@ -78,31 +86,41 @@ async function indexCommand(targetPath = '.', options = {}) {
       }
     }
 
-    // Initialize indexer with branch-specific config
-    const indexer = new ContextRagIndexer(branchConfig);
+    let result;
     
-    // Start indexing
-    console.log(chalk.blue('🚀 Building semantic index...'));
-    
-    // Index regular files
-    const result = await indexer.indexDirectory(targetPath, options);
-    
-    // Index project context if available
-    let contextResult = null;
-    if (contextInfo) {
-      contextResult = await contextService.indexContextFiles(indexer);
+    // Use context-focused indexing for non-main branches with context files
+    if (hasContextFiles && currentBranch && currentBranch !== 'main' && currentBranch !== 'master') {
+      console.log(chalk.blue('🚀 Building context-focused index...'));
+      result = await contextIndexer.indexContextOnly(currentBranch);
       
-      if (contextResult) {
-        // Merge context chunks with regular index
-        const indexContent = fs.readFileSync(branchCachePath, 'utf8');
-        const indexData = JSON.parse(indexContent);
+      // Save the context-focused index
+      fs.writeFileSync(branchCachePath, JSON.stringify(result.index_data, null, 2));
+      
+    } else {
+      // Use traditional indexing for main branch or when no context files
+      console.log(chalk.blue('🚀 Building semantic index...'));
+      
+      const indexer = new ContextRagIndexer(branchConfig);
+      result = await indexer.indexDirectory(targetPath, options);
+      
+      // Add context files if available
+      if (hasContextFiles) {
+        const contextResult = await contextIndexer.indexContextOnly(currentBranch || 'main');
         
-        // Add context chunks to the index
-        indexData.chunks = [...indexData.chunks, ...contextResult.chunks];
-        indexData.context_metadata = contextResult.metadata;
-        
-        // Save updated index
-        fs.writeFileSync(branchCachePath, JSON.stringify(indexData, null, 2));
+        if (contextResult.index_data) {
+          // Merge context chunks with regular index
+          const indexContent = fs.readFileSync(branchCachePath, 'utf8');
+          const indexData = JSON.parse(indexContent);
+          
+          // Add context chunks to the index
+          indexData.chunks = [...indexData.chunks, ...contextResult.index_data.chunks];
+          indexData.context_metadata = contextResult.index_data.context_metadata;
+          
+          // Save updated index
+          fs.writeFileSync(branchCachePath, JSON.stringify(indexData, null, 2));
+          
+          console.log(chalk.green(`✅ Added ${contextResult.total_chunks} context chunks to index`));
+        }
       }
     }
     
@@ -111,9 +129,9 @@ async function indexCommand(targetPath = '.', options = {}) {
     console.log(chalk.cyan(`📁 Files indexed: ${result.indexed_files}`));
     console.log(chalk.cyan(`📄 Total chunks: ${result.total_chunks}`));
     
-    if (contextResult) {
-      console.log(chalk.cyan(`🎯 Context chunks: ${contextResult.metadata.total_chunks}`));
-      console.log(chalk.cyan(`📋 Context files: ${contextResult.metadata.context_files}`));
+    if (result.context_focused) {
+      console.log(chalk.cyan(`🎯 Context-focused indexing used`));
+      console.log(chalk.cyan(`📋 Context types: ${result.context_types?.join(', ') || 'N/A'}`));
     }
     
     console.log(chalk.cyan(`⏱️  Processing time: ${result.processing_time_ms}ms`));
@@ -126,10 +144,11 @@ async function indexCommand(targetPath = '.', options = {}) {
     // Show next steps
     console.log(chalk.blue('\n🎯 Next steps:'));
     console.log(chalk.gray('  1. Run "context-rag query \'your question\'" to search'));
-    if (contextInfo) {
-      console.log(chalk.gray('  2. Context-aware search will prioritize project context'));
+    if (hasContextFiles) {
+      console.log(chalk.gray('  2. Context-focused search will prioritize specs and docs'));
     }
     console.log(chalk.gray('  3. Use "context-rag branch" to manage branch caches'));
+    console.log(chalk.gray('  4. Use "context-rag watch" to auto-update on context changes'));
     
   } catch (error) {
     console.error(chalk.red('❌ Error during indexing:'), error.message);

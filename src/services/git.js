@@ -2,12 +2,15 @@ const simpleGit = require('simple-git');
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
+const { BranchCacheManager } = require('./branch-cache-manager');
 
 class GitService {
   constructor(config) {
     this.config = config;
     this.git = simpleGit();
     this.cacheDir = '.context-rag/cache';
+    this.branchCacheManager = new BranchCacheManager(config);
+    this.lastKnownBranch = null;
   }
 
   async getCurrentBranch() {
@@ -19,6 +22,55 @@ class GitService {
     }
   }
 
+  /**
+   * Detect and handle branch changes using simplified strategy
+   */
+  async detectAndHandleBranchChange() {
+    const currentBranch = await this.getCurrentBranch();
+    
+    if (!currentBranch) {
+      return null; // Not in a git repository
+    }
+    
+    // Check if branch has changed
+    if (this.lastKnownBranch && this.lastKnownBranch !== currentBranch) {
+      console.log(chalk.blue(`🔄 Branch change detected: ${this.lastKnownBranch} → ${currentBranch}`));
+      
+      // Handle branch switch with simplified strategy
+      await this.branchCacheManager.handleBranchOperation('switch', {
+        from: this.lastKnownBranch,
+        to: currentBranch
+      });
+    }
+    
+    this.lastKnownBranch = currentBranch;
+    return currentBranch;
+  }
+
+  /**
+   * Handle merge operations with simplified strategy
+   */
+  async handleMergeOperation(targetBranch, sourceBranch) {
+    console.log(chalk.blue(`🔀 Handling merge operation: ${sourceBranch} → ${targetBranch}`));
+    
+    return await this.branchCacheManager.handleBranchOperation('merge', {
+      target: targetBranch,
+      source: sourceBranch
+    });
+  }
+
+  /**
+   * Handle branch creation with simplified strategy
+   */
+  async handleBranchCreate(branchName, baseBranch = 'main') {
+    console.log(chalk.blue(`🌱 Handling branch creation: ${branchName} from ${baseBranch}`));
+    
+    return await this.branchCacheManager.handleBranchOperation('create', {
+      branchName,
+      baseBranch
+    });
+  }
+
   async getBranchCachePath(branch = null) {
     if (!branch) {
       branch = await this.getCurrentBranch();
@@ -28,8 +80,8 @@ class GitService {
       return this.config.storage.path; // Fallback to default path
     }
     
-    const safeBranchName = branch.replace(/[^a-zA-Z0-9-_]/g, '_');
-    return path.join(this.cacheDir, `${safeBranchName}_index.db`);
+    // Use the branch cache manager for consistent path handling
+    return this.branchCacheManager.getBranchCachePath(branch);
   }
 
   async getEmbeddingsCachePath(branch = null) {
@@ -44,47 +96,13 @@ class GitService {
   }
 
   async listCachedBranches() {
-    await this.ensureCacheDirectory();
-    
-    const branches = [];
-    const files = fs.readdirSync(this.cacheDir);
-    
-    for (const file of files) {
-      if (file.endsWith('_index.db')) {
-        const branchName = file.replace('_index.db', '').replace(/_/g, '/');
-        const filePath = path.join(this.cacheDir, file);
-        const stats = fs.statSync(filePath);
-        
-        branches.push({
-          name: branchName,
-          size: stats.size,
-          modified: stats.mtime,
-          path: filePath
-        });
-      }
-    }
-    
-    return branches;
+    // Use the branch cache manager for consistent branch listing
+    return await this.branchCacheManager.listCachedBranches();
   }
 
   async clearBranchCache(branchName) {
-    const safeBranchName = branchName.replace(/[^a-zA-Z0-9-_]/g, '_');
-    const indexPath = path.join(this.cacheDir, `${safeBranchName}_index.db`);
-    const embeddingsPath = path.join(this.cacheDir, `${safeBranchName}_embeddings.json`);
-    
-    let cleared = 0;
-    
-    if (fs.existsSync(indexPath)) {
-      fs.unlinkSync(indexPath);
-      cleared++;
-    }
-    
-    if (fs.existsSync(embeddingsPath)) {
-      fs.unlinkSync(embeddingsPath);
-      cleared++;
-    }
-    
-    return cleared;
+    // Use the branch cache manager for consistent cache clearing
+    return await this.branchCacheManager.cleanBranchCache(branchName);
   }
 
   async getChangedFiles(baseBranch = 'main') {
@@ -126,106 +144,58 @@ class GitService {
       return false; // Not in a git repo
     }
     
-    const branchCachePath = await this.getBranchCachePath(currentBranch);
-    
-    if (!fs.existsSync(branchCachePath)) {
-      return true; // No cache exists for this branch
-    }
-    
-    try {
-      const cacheStats = fs.statSync(branchCachePath);
-      const status = await this.git.status();
-      
-      // Check if there are uncommitted changes
-      if (status.files.length > 0) {
-        console.log(chalk.yellow(`⚠️  Detected ${status.files.length} uncommitted changes`));
-        return true;
-      }
-      
-      // Check if cache is older than recent commits
-      const recentCommits = await this.git.log({ maxCount: 5 });
-      if (recentCommits.latest) {
-        const lastCommitDate = new Date(recentCommits.latest.date);
-        if (lastCommitDate > cacheStats.mtime) {
-          console.log(chalk.yellow('⚠️  Cache is older than recent commits'));
-          return true;
-        }
-      }
-      
-      return false;
-    } catch (error) {
-      console.warn(chalk.yellow(`⚠️  Could not check git status: ${error.message}`));
-      return false;
-    }
+    // Use simplified strategy: check if context has changed
+    return await this.branchCacheManager.shouldRebuildForBranch(currentBranch);
   }
 
+  /**
+   * Simplified approach: no complex merging, just clean rebuild
+   * @deprecated Use handleBranchOperation instead
+   */
   async mergeCacheFromBase(baseBranch = 'main') {
     const currentBranch = await this.getCurrentBranch();
+    
+    console.log(chalk.yellow('⚠️  Using deprecated mergeCacheFromBase. Consider using simplified branch operations.'));
+    
     if (!currentBranch || currentBranch === baseBranch) {
       return null;
     }
     
-    const baseCachePath = await this.getBranchCachePath(baseBranch);
-    const currentCachePath = await this.getBranchCachePath(currentBranch);
+    // In simplified approach, we just trigger a rebuild if needed
+    const needsRebuild = await this.shouldRebuildIndex();
     
-    if (!fs.existsSync(baseCachePath)) {
-      console.log(chalk.yellow(`⚠️  No base cache found for branch: ${baseBranch}`));
-      return null;
+    if (needsRebuild) {
+      console.log(chalk.blue(`🔨 Triggering context rebuild for ${currentBranch} (simplified strategy)`));
+      // The actual rebuild will be handled by the indexing process
     }
     
-    if (fs.existsSync(currentCachePath)) {
-      return currentCachePath; // Current branch cache already exists
+    return await this.getBranchCachePath(currentBranch);
+  }
+
+  /**
+   * Get cache status for current branch
+   */
+  async getCacheStatus() {
+    const currentBranch = await this.getCurrentBranch();
+    
+    if (!currentBranch) {
+      return {
+        branch: null,
+        isGitRepo: false,
+        cacheExists: false
+      };
     }
     
-    try {
-      // Copy base cache as starting point
-      const baseIndexData = JSON.parse(fs.readFileSync(baseCachePath, 'utf8'));
-      const baseEmbeddingsPath = baseCachePath.replace('.db', '_embeddings.json');
-      
-      // Get changed files to filter out outdated entries
-      const changedFiles = await this.getChangedFiles(baseBranch);
-      
-      if (changedFiles.length > 0) {
-        console.log(chalk.blue(`🔄 Merging base cache, filtering ${changedFiles.length} changed files`));
-        
-        // Filter out chunks from changed files
-        baseIndexData.chunks = baseIndexData.chunks.filter(chunk => 
-          !changedFiles.some(changedFile => chunk.file_path.includes(changedFile))
-        );
-        
-        // Update file metadata
-        for (const filePath of Object.keys(baseIndexData.files)) {
-          if (changedFiles.some(changedFile => filePath.includes(changedFile))) {
-            delete baseIndexData.files[filePath];
-          }
-        }
-      }
-      
-      // Save merged cache for current branch
-      await this.ensureCacheDirectory();
-      fs.writeFileSync(currentCachePath, JSON.stringify(baseIndexData, null, 2));
-      
-      // Copy embeddings if they exist
-      if (fs.existsSync(baseEmbeddingsPath)) {
-        const currentEmbeddingsPath = await this.getEmbeddingsCachePath(currentBranch);
-        const embeddingsData = JSON.parse(fs.readFileSync(baseEmbeddingsPath, 'utf8'));
-        
-        if (changedFiles.length > 0) {
-          embeddingsData.chunks = embeddingsData.chunks.filter(chunk => 
-            !changedFiles.some(changedFile => chunk.file_path.includes(changedFile))
-          );
-        }
-        
-        fs.writeFileSync(currentEmbeddingsPath, JSON.stringify(embeddingsData, null, 2));
-      }
-      
-      console.log(chalk.green(`✅ Merged base cache from ${baseBranch} to ${currentBranch}`));
-      return currentCachePath;
-      
-    } catch (error) {
-      console.warn(chalk.yellow(`⚠️  Failed to merge base cache: ${error.message}`));
-      return null;
-    }
+    return await this.branchCacheManager.getCacheStatus(currentBranch);
+  }
+
+  /**
+   * Initialize branch tracking
+   */
+  async initializeBranchTracking() {
+    const currentBranch = await this.getCurrentBranch();
+    this.lastKnownBranch = currentBranch;
+    return currentBranch;
   }
 }
 

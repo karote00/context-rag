@@ -3,6 +3,8 @@ const { loadConfig } = require('../services/config');
 const { FileWatcher } = require('../services/watcher');
 const { GitService } = require('../services/git');
 const { ContextRagIndexer } = require('../services/indexer');
+const { ContextMonitor } = require('../services/context-monitor');
+const { ContextIndexer } = require('../services/context-indexer');
 
 async function watchCommand() {
   try {
@@ -14,6 +16,8 @@ async function watchCommand() {
 
     const gitService = new GitService(config);
     const watcher = new FileWatcher(config, gitService);
+    const contextMonitor = new ContextMonitor(config);
+    const contextIndexer = new ContextIndexer(config);
     
     // Set up event handlers
     watcher.on('fileAdded', async (filePath, content) => {
@@ -33,28 +37,55 @@ async function watchCommand() {
 
     watcher.on('branchChanged', async (oldBranch, newBranch) => {
       console.log(chalk.blue(`🌿 Branch changed: ${oldBranch} → ${newBranch}`));
-      console.log(chalk.gray('   Index will be updated for new branch context'));
       
-      // Trigger cache merge if needed
-      if (newBranch !== 'main' && newBranch !== 'master') {
-        await gitService.mergeCacheFromBase('main');
+      // Use simplified branch handling
+      await gitService.handleBranchOperation('switch', {
+        from: oldBranch,
+        to: newBranch
+      });
+    });
+
+    // Set up context monitoring
+    await contextMonitor.startWatching(async (changeEvent) => {
+      console.log(chalk.blue(`📝 Context change detected: ${changeEvent.change_type} ${changeEvent.changed_path}`));
+      
+      // Rebuild context cache for current branch
+      const currentBranch = await gitService.getCurrentBranch();
+      if (currentBranch) {
+        console.log(chalk.yellow(`🔨 Rebuilding context cache for ${currentBranch}...`));
+        
+        try {
+          await contextIndexer.indexContextOnly(currentBranch);
+          console.log(chalk.green(`✅ Context cache rebuilt successfully`));
+        } catch (error) {
+          console.error(chalk.red(`❌ Failed to rebuild context cache: ${error.message}`));
+        }
       }
     });
 
     // Handle graceful shutdown
-    process.on('SIGINT', () => {
+    process.on('SIGINT', async () => {
       console.log(chalk.blue('\n🛑 Stopping watch mode...'));
       watcher.stopWatching();
+      await contextMonitor.stopWatching();
       process.exit(0);
     });
 
-    process.on('SIGTERM', () => {
+    process.on('SIGTERM', async () => {
       watcher.stopWatching();
+      await contextMonitor.stopWatching();
       process.exit(0);
     });
 
     // Start watching
+    console.log(chalk.blue('🔍 Starting file and context monitoring...'));
     await watcher.startWatching('.');
+    
+    console.log(chalk.green('✅ Watch mode active'));
+    console.log(chalk.gray('   📁 Monitoring file changes'));
+    console.log(chalk.gray('   📝 Monitoring context changes'));
+    console.log(chalk.gray('   🌿 Monitoring branch changes'));
+    console.log(chalk.gray('   Press Ctrl+C to stop'));
     
     // Keep process alive
     const keepAlive = () => {

@@ -61,6 +61,11 @@ async function statusCommand(options = {}) {
       console.log(chalk.yellow('   ⚠️  Not in a git repository'));
     }
 
+    // Check context using new context monitor
+    const { ContextMonitor } = require('../services/context-monitor');
+    const contextMonitor = new ContextMonitor(config);
+    const contextDiscovery = await contextMonitor.discoverContextFiles();
+    
     // Check for handoff-ai integration
     const hasHandoffAI = require('fs').existsSync('.project') && 
       require('fs').statSync('.project').isDirectory() &&
@@ -71,20 +76,23 @@ async function statusCommand(options = {}) {
 
     // Context Status
     console.log(chalk.cyan('\n🎯 Context Status:'));
-    if (hasHandoffAI) {
-      console.log(chalk.green('   ✅ Handoff-AI integration detected'));
-      console.log(chalk.gray('   📂 Using .project/ directory for context'));
-      console.log(chalk.gray('   🎯 Optimized for handoff-ai generated documentation'));
-    } else if (contextInfo.has_context) {
-      console.log(chalk.green('   ✅ Project context detected'));
-      console.log(chalk.gray(`   📂 Path: ${contextInfo.context_path}`));
-      console.log(chalk.gray(`   📄 Files: ${contextInfo.total_context_files}`));
+    if (contextDiscovery.totalFiles > 0) {
+      console.log(chalk.green(`   ✅ Found ${contextDiscovery.totalFiles} context files`));
+      console.log(chalk.gray(`   📂 Directories: ${contextDiscovery.directories.length}`));
       
-      const contextTypes = [...new Set(contextInfo.context_files.map(f => f.type))];
+      contextDiscovery.directories.forEach(dir => {
+        console.log(chalk.gray(`      ${dir.path} (${dir.files.length} files)`));
+      });
+      
+      const contextTypes = Array.from(contextDiscovery.contextTypes);
       console.log(chalk.gray(`   🏷️  Types: ${contextTypes.join(', ')}`));
+      
+      if (hasHandoffAI) {
+        console.log(chalk.green('   🤖 Handoff-AI integration detected'));
+      }
     } else {
-      console.log(chalk.gray('   📝 No structured context found'));
-      console.log(chalk.gray('   Using general file indexing'));
+      console.log(chalk.yellow('   ⚠️  No context files found'));
+      console.log(chalk.gray('   Consider adding .kiro/specs/, .project/, or docs/ directories'));
     }
 
     // Detect embedding engine
