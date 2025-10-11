@@ -182,6 +182,74 @@ Maximum cache size before cleanup.
 
 **Format:** Number + unit (KB, MB, GB)
 
+### `context` Section
+
+Controls project context files for main branch (stable project knowledge).
+
+#### `include` (Array of strings)
+Project context paths to index on main branch.
+
+**Default:**
+```json
+"include": [
+  ".project/",
+  "docs/",
+  "README.md",
+  "ARCHITECTURE.md"
+]
+```
+
+#### `exclude` (Array of strings)
+Patterns to ignore when indexing project context.
+
+**Default:**
+```json
+"exclude": ["node_modules/", ".git/", "dist/", "build/"]
+```
+
+### `specs` Section
+
+Controls feature implementation docs for feature branches.
+
+#### `include` (Array of strings)
+Specs paths to monitor for feature branches.
+
+**Default:**
+```json
+"include": [
+  ".kiro/specs/",
+  "requirements/",
+  "design/"
+]
+```
+
+#### `exclude` (Array of strings)
+Patterns to ignore when monitoring specs.
+
+**Default:**
+```json
+"exclude": [
+  "node_modules",
+  ".git",
+  "package-lock.json",
+  "*.log"
+]
+```
+
+#### `extensions` (Array of strings)
+File extensions to monitor for specs.
+
+**Default:**
+```json
+"extensions": [".md", ".txt", ".yaml", ".yml", ".json"]
+```
+
+**How it works:**
+1. **Main branch**: Uses `context.include` for stable project knowledge
+2. **Feature branches**: Uses `specs.include` for implementation docs
+3. **Monitoring**: Watches `specs` paths for changes → rebuilds feature cache
+4. **Clear separation**: No overlap between project context and feature specs
+
 ## Environment Variables
 
 ### `OPENAI_API_KEY`

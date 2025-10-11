@@ -1,68 +1,69 @@
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
-const { ContextMonitor } = require('./context-monitor');
+const { SpecsMonitor } = require('./context-monitor');
 
 /**
- * Context-focused indexer that prioritizes documentation and specs over source code
+ * Specs indexer for feature branches
+ * Focuses on feature implementation docs: requirements, design, tasks, specs
  */
-class ContextIndexer {
+class SpecsIndexer {
   constructor(config = {}) {
     this.config = config;
-    this.contextMonitor = new ContextMonitor(config);
+    this.specsMonitor = new SpecsMonitor(config);
   }
   
   /**
-   * Index context files only for a specific branch
+   * Index specs files only for a specific feature branch
    * @param {string} branchName - Name of the branch
    * @returns {Object} Indexing results
    */
-  async indexContextOnly(branchName) {
-    console.log(chalk.blue(`📚 Starting context-focused indexing for branch: ${branchName}`));
+  async indexSpecsOnly(branchName) {
+    console.log(chalk.blue(`📚 Starting specs indexing for feature branch: ${branchName}`));
     
     const startTime = Date.now();
     
-    // Discover context files
-    const contextDiscovery = await this.contextMonitor.discoverContextFiles();
+    // Discover specs files
+    const specsDiscovery = await this.specsMonitor.discoverContextFiles();
     
-    if (contextDiscovery.totalFiles === 0) {
-      console.log(chalk.yellow('⚠️  No context files found'));
-      console.log(chalk.gray('Falling back to general file indexing'));
-      return await this.fallbackToGeneralIndexing(branchName);
+    if (specsDiscovery.totalFiles === 0) {
+      console.log(chalk.yellow('⚠️  No specs files found'));
+      console.log(chalk.gray('Consider adding .kiro/specs/, requirements/, or design/ directories'));
+      return await this.createEmptySpecsResult(branchName);
     }
     
-    // Process context files
-    const indexResult = await this.processContextFiles(contextDiscovery, branchName);
+    // Process specs files
+    const indexResult = await this.processSpecsFiles(specsDiscovery, branchName);
     
     const endTime = Date.now();
     const processingTime = endTime - startTime;
     
-    console.log(chalk.green(`✅ Context indexing completed in ${processingTime}ms`));
+    console.log(chalk.green(`✅ Specs indexing completed in ${processingTime}ms`));
     
     return {
       ...indexResult,
       branch: branchName,
-      context_focused: true,
+      specs_focused: true,
       processing_time_ms: processingTime,
-      context_discovery: contextDiscovery
+      specs_discovery: specsDiscovery
     };
   }
   
   /**
-   * Process discovered context files into index chunks
-   * @param {Object} contextDiscovery - Context discovery results
+   * Process discovered specs files into index chunks
+   * @param {Object} specsDiscovery - Specs discovery results
    * @param {string} branchName - Branch name
    * @returns {Object} Processing results
    */
-  async processContextFiles(contextDiscovery, branchName) {
+  async processSpecsFiles(specsDiscovery, branchName) {
     const chunks = [];
     const processedFiles = [];
     let totalChunks = 0;
     
-    console.log(chalk.blue(`📄 Processing ${contextDiscovery.totalFiles} context files...`));
+    console.log(chalk.blue(`📄 Processing ${specsDiscovery.totalFiles} specs files...`));
     
-    // Process files in priority order
-    for (const file of contextDiscovery.files) {
+    // Process files
+    for (const file of specsDiscovery.files) {
       try {
         const fileChunks = await this.processContextFile(file);
         chunks.push(...fileChunks);
@@ -88,32 +89,29 @@ class ContextIndexer {
         created: new Date().toISOString(),
         branch: branchName,
         version: '0.2.0',
-        context_focused: true,
+        specs_focused: true,
         total_files: processedFiles.length,
         total_chunks: totalChunks,
-        context_types: Array.from(contextDiscovery.contextTypes),
-        context_directories: contextDiscovery.directories.map(d => d.path)
+        specs_directories: specsDiscovery.directories.map(d => d.path)
       },
       chunks: chunks,
       files: processedFiles,
-      context_metadata: {
-        directories: contextDiscovery.directories,
-        total_context_files: contextDiscovery.totalFiles,
-        context_types: Array.from(contextDiscovery.contextTypes)
+      specs_metadata: {
+        directories: specsDiscovery.directories,
+        total_specs_files: specsDiscovery.totalFiles
       }
     };
     
     return {
       indexed_files: processedFiles.length,
       total_chunks: totalChunks,
-      index_data: indexData,
-      context_types: Array.from(contextDiscovery.contextTypes)
+      index_data: indexData
     };
   }
   
   /**
-   * Process a single context file into chunks
-   * @param {Object} fileInfo - File information from context discovery
+   * Process a single specs file into chunks
+   * @param {Object} fileInfo - File information from specs discovery
    * @returns {Array} Array of chunks
    */
   async processContextFile(fileInfo) {
@@ -300,12 +298,9 @@ class ContextIndexer {
       content: content.trim(),
       snippet: snippet,
       chunk_index: chunkIndex,
-      source_type: 'context-file',
-      context_category: fileInfo.contextType,
-      priority_score: fileInfo.priority,
-      relevance_score: fileInfo.relevanceScore,
+      source_type: 'specs-file',
       is_context: true,
-      context_type: fileInfo.contextType,
+      context_type: 'feature_specs',
       file_size: fileInfo.size,
       modified: fileInfo.modified.toISOString()
     };
@@ -333,23 +328,30 @@ class ContextIndexer {
   }
   
   /**
-   * Fallback to general file indexing when no context files found
+   * Create empty result when no specs files found
    * @param {string} branchName - Branch name
    * @returns {Object} Indexing results
    */
-  async fallbackToGeneralIndexing(branchName) {
-    console.log(chalk.yellow('📁 No context files found, using general file indexing'));
-    
-    // This would integrate with the existing general indexer
-    // For now, return a minimal result
+  async createEmptySpecsResult(branchName) {
     return {
       indexed_files: 0,
       total_chunks: 0,
       branch: branchName,
-      context_focused: false,
-      fallback_used: true,
+      specs_focused: true,
       processing_time_ms: 0,
-      message: 'No context files found. Consider adding .kiro/specs/, .project/, or docs/ directories.'
+      index_data: {
+        metadata: {
+          created: new Date().toISOString(),
+          branch: branchName,
+          version: '0.2.0',
+          specs_focused: true,
+          total_files: 0,
+          total_chunks: 0
+        },
+        chunks: [],
+        files: []
+      },
+      message: 'No specs files found. Consider adding .kiro/specs/, requirements/, or design/ directories.'
     };
   }
   
@@ -371,4 +373,4 @@ class ContextIndexer {
   }
 }
 
-module.exports = { ContextIndexer };
+module.exports = { SpecsIndexer };

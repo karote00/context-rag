@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
-const { ContextMonitor } = require('./context-monitor');
+const { SpecsMonitor } = require('./context-monitor');
 
 /**
  * Simplified branch cache manager
@@ -10,7 +10,7 @@ const { ContextMonitor } = require('./context-monitor');
 class BranchCacheManager {
   constructor(config = {}) {
     this.config = config;
-    this.contextMonitor = new ContextMonitor(config);
+    this.specsMonitor = new SpecsMonitor(config);
     this.cacheDir = '.context-rag/cache';
     this.metadataDir = '.context-rag/metadata';
     
@@ -158,36 +158,34 @@ class BranchCacheManager {
     try {
       console.log(chalk.blue(`🔨 Rebuilding context cache for branch: ${branchName}`));
       
-      // Discover current context files
-      const contextFiles = await this.contextMonitor.discoverContextFiles();
+      // Discover current specs files
+      const specsFiles = await this.specsMonitor.discoverContextFiles();
       
-      if (contextFiles.totalFiles === 0) {
-        console.log(chalk.yellow(`⚠️  No context files found for branch ${branchName}`));
-        console.log(chalk.gray('Consider adding .kiro/specs/, .project/, or docs/ directories'));
+      if (specsFiles.totalFiles === 0) {
+        console.log(chalk.yellow(`⚠️  No specs files found for branch ${branchName}`));
+        console.log(chalk.gray('Consider adding .kiro/specs/, requirements/, or design/ directories'));
         return null;
       }
       
       // Create cache metadata
       const metadata = {
         branch: branchName,
-        cache_type: 'context_focused',
+        cache_type: 'specs_focused',
         created: new Date().toISOString(),
-        context_sources: contextFiles.directories.map(d => d.path),
-        indexed_files: contextFiles.totalFiles,
-        context_files: contextFiles.files.length,
-        context_types: Array.from(contextFiles.contextTypes),
-        last_context_change: new Date().toISOString(),
-        fingerprint: await this.generateContextFingerprint(contextFiles.files)
+        specs_sources: specsFiles.directories.map(d => d.path),
+        indexed_files: specsFiles.totalFiles,
+        specs_files: specsFiles.files.length,
+        last_specs_change: new Date().toISOString(),
+        fingerprint: await this.generateSpecsFingerprint(specsFiles.files)
       };
       
       // Save metadata
       const metadataPath = this.getBranchMetadataPath(branchName);
       fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
       
-      console.log(chalk.green(`✅ Context cache rebuilt for ${branchName}`));
-      console.log(chalk.gray(`   📁 Context directories: ${metadata.context_sources.length}`));
-      console.log(chalk.gray(`   📄 Context files: ${metadata.context_files}`));
-      console.log(chalk.gray(`   🏷️  Context types: ${metadata.context_types.join(', ')}`));
+      console.log(chalk.green(`✅ Specs cache rebuilt for ${branchName}`));
+      console.log(chalk.gray(`   📁 Specs directories: ${metadata.specs_sources.length}`));
+      console.log(chalk.gray(`   📄 Specs files: ${metadata.specs_files}`));
       
       return metadata;
       
@@ -213,12 +211,12 @@ class BranchCacheManager {
     try {
       const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
       
-      // Check if context has changed since last build
-      const currentContextFiles = await this.contextMonitor.discoverContextFiles();
-      const currentFingerprint = await this.generateContextFingerprint(currentContextFiles.files);
+      // Check if specs have changed since last build
+      const currentSpecsFiles = await this.specsMonitor.discoverContextFiles();
+      const currentFingerprint = await this.generateSpecsFingerprint(currentSpecsFiles.files);
       
       if (metadata.fingerprint !== currentFingerprint) {
-        console.log(chalk.yellow(`🔄 Context fingerprint changed for ${branchName}`));
+        console.log(chalk.yellow(`🔄 Specs fingerprint changed for ${branchName}`));
         return true;
       }
       
@@ -231,15 +229,15 @@ class BranchCacheManager {
   }
   
   /**
-   * Generate a fingerprint for context files
-   * @param {Array} contextFiles - Array of context file objects
+   * Generate a fingerprint for specs files
+   * @param {Array} specsFiles - Array of specs file objects
    * @returns {string} Fingerprint hash
    */
-  async generateContextFingerprint(contextFiles) {
+  async generateSpecsFingerprint(specsFiles) {
     const crypto = require('crypto');
     
     // Create fingerprint from file paths, sizes, and modification times
-    const fingerprintData = contextFiles
+    const fingerprintData = specsFiles
       .sort((a, b) => a.path.localeCompare(b.path))
       .map(file => `${file.path}:${file.size}:${file.modified.getTime()}`)
       .join('|');

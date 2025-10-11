@@ -3,8 +3,8 @@ const { loadConfig } = require('../services/config');
 const { FileWatcher } = require('../services/watcher');
 const { GitService } = require('../services/git');
 const { ContextRagIndexer } = require('../services/indexer');
-const { ContextMonitor } = require('../services/context-monitor');
-const { ContextIndexer } = require('../services/context-indexer');
+const { SpecsMonitor } = require('../services/context-monitor');
+const { SpecsIndexer } = require('../services/context-indexer');
 
 async function watchCommand() {
   try {
@@ -16,8 +16,8 @@ async function watchCommand() {
 
     const gitService = new GitService(config);
     const watcher = new FileWatcher(config, gitService);
-    const contextMonitor = new ContextMonitor(config);
-    const contextIndexer = new ContextIndexer(config);
+    const specsMonitor = new SpecsMonitor(config);
+    const specsIndexer = new SpecsIndexer(config);
     
     // Set up event handlers
     watcher.on('fileAdded', async (filePath, content) => {
@@ -45,21 +45,22 @@ async function watchCommand() {
       });
     });
 
-    // Set up context monitoring
-    await contextMonitor.startWatching(async (changeEvent) => {
-      console.log(chalk.blue(`📝 Context change detected: ${changeEvent.change_type} ${changeEvent.changed_path}`));
-      
-      // Rebuild context cache for current branch
+    // Set up specs monitoring (for feature branches)
+    await specsMonitor.startWatching(async (changeEvent) => {
       const currentBranch = await gitService.getCurrentBranch();
-      if (currentBranch) {
-        console.log(chalk.yellow(`🔨 Rebuilding context cache for ${currentBranch}...`));
+      
+      if (currentBranch && currentBranch !== 'main' && currentBranch !== 'master') {
+        console.log(chalk.yellow(`🔨 Rebuilding specs cache for feature branch ${currentBranch}...`));
         
         try {
-          await contextIndexer.indexContextOnly(currentBranch);
-          console.log(chalk.green(`✅ Context cache rebuilt successfully`));
+          await specsIndexer.indexSpecsOnly(currentBranch);
+          console.log(chalk.green(`✅ Specs cache rebuilt successfully`));
         } catch (error) {
-          console.error(chalk.red(`❌ Failed to rebuild context cache: ${error.message}`));
+          console.error(chalk.red(`❌ Failed to rebuild specs cache: ${error.message}`));
         }
+      } else {
+        console.log(chalk.gray('📝 Specs change detected on main branch - no action needed'));
+        console.log(chalk.gray('   Main branch uses project context, not specs'));
       }
     });
 
@@ -67,13 +68,13 @@ async function watchCommand() {
     process.on('SIGINT', async () => {
       console.log(chalk.blue('\n🛑 Stopping watch mode...'));
       watcher.stopWatching();
-      await contextMonitor.stopWatching();
+      await specsMonitor.stopWatching();
       process.exit(0);
     });
 
     process.on('SIGTERM', async () => {
       watcher.stopWatching();
-      await contextMonitor.stopWatching();
+      await specsMonitor.stopWatching();
       process.exit(0);
     });
 
@@ -83,7 +84,7 @@ async function watchCommand() {
     
     console.log(chalk.green('✅ Watch mode active'));
     console.log(chalk.gray('   📁 Monitoring file changes'));
-    console.log(chalk.gray('   📝 Monitoring context changes'));
+    console.log(chalk.gray('   📋 Monitoring specs changes (feature branches)'));
     console.log(chalk.gray('   🌿 Monitoring branch changes'));
     console.log(chalk.gray('   Press Ctrl+C to stop'));
     

@@ -5,8 +5,9 @@ const { loadConfig } = require('../services/config');
 const { ContextRagIndexer } = require('../services/indexer');
 const { GitService } = require('../services/git');
 const { ContextService } = require('../services/context');
-const { ContextIndexer } = require('../services/context-indexer');
-const { ContextMonitor } = require('../services/context-monitor');
+const { SpecsIndexer } = require('../services/context-indexer');
+const { SpecsMonitor } = require('../services/context-monitor');
+const { ProjectContextIndexer } = require('../services/project-context-indexer');
 
 async function indexCommand(targetPath = '.', options = {}) {
   try {
@@ -24,8 +25,9 @@ async function indexCommand(targetPath = '.', options = {}) {
     // Initialize services
     const gitService = new GitService(config);
     const contextService = new ContextService(config);
-    const contextIndexer = new ContextIndexer(config);
-    const contextMonitor = new ContextMonitor(config);
+    const specsIndexer = new SpecsIndexer(config);
+    const projectContextIndexer = new ProjectContextIndexer(config);
+    const specsMonitor = new SpecsMonitor(config);
     
     // Detect and handle branch changes
     const currentBranch = await gitService.detectAndHandleBranchChange();
@@ -55,16 +57,26 @@ async function indexCommand(targetPath = '.', options = {}) {
       
     }
 
-    // Check for context files using new context monitor
-    const contextDiscovery = await contextMonitor.discoverContextFiles();
-    const hasContextFiles = contextDiscovery.totalFiles > 0;
+    // Check for different types of files
+    const specsDiscovery = await specsMonitor.discoverContextFiles();
+    const projectContextDiscovery = await projectContextIndexer.discoverContextFiles(
+      projectContextIndexer.getContextPaths()
+    );
     
-    if (hasContextFiles) {
-      console.log(chalk.green(`🎯 Found ${contextDiscovery.totalFiles} context files in ${contextDiscovery.directories.length} directories`));
-      console.log(chalk.gray(`   Context types: ${Array.from(contextDiscovery.contextTypes).join(', ')}`));
-    } else {
-      console.log(chalk.yellow('⚠️  No context files found'));
-      console.log(chalk.gray('Consider adding .kiro/specs/, .project/, or docs/ directories'));
+    const hasSpecsFiles = specsDiscovery.totalFiles > 0;
+    const hasProjectContext = projectContextDiscovery.length > 0;
+    
+    if (hasSpecsFiles) {
+      console.log(chalk.green(`📋 Found ${specsDiscovery.totalFiles} specs files in ${specsDiscovery.directories.length} directories`));
+    }
+    
+    if (hasProjectContext) {
+      console.log(chalk.green(`📚 Found ${projectContextDiscovery.length} project context files`));
+    }
+    
+    if (!hasSpecsFiles && !hasProjectContext) {
+      console.log(chalk.yellow('⚠️  No context or specs files found'));
+      console.log(chalk.gray('Consider adding docs/, .project/ (project context) or .kiro/specs/ (feature specs)'));
     }
 
     // Get branch-specific cache path
@@ -88,40 +100,21 @@ async function indexCommand(targetPath = '.', options = {}) {
 
     let result;
     
-    // Use context-focused indexing for non-main branches with context files
-    if (hasContextFiles && currentBranch && currentBranch !== 'main' && currentBranch !== 'master') {
-      console.log(chalk.blue('🚀 Building context-focused index...'));
-      result = await contextIndexer.indexContextOnly(currentBranch);
+    if (currentBranch && currentBranch !== 'main' && currentBranch !== 'master') {
+      // Feature branch - use specs-focused indexing
+      console.log(chalk.blue('🚀 Building specs-focused index for feature branch...'));
+      result = await specsIndexer.indexSpecsOnly(currentBranch);
       
-      // Save the context-focused index
+      // Save the specs-focused index
       fs.writeFileSync(branchCachePath, JSON.stringify(result.index_data, null, 2));
       
     } else {
-      // Use traditional indexing for main branch or when no context files
-      console.log(chalk.blue('🚀 Building semantic index...'));
+      // Main branch - use project context indexing
+      console.log(chalk.blue('🚀 Building project context index for main branch...'));
+      result = await projectContextIndexer.indexProjectContext();
       
-      const indexer = new ContextRagIndexer(branchConfig);
-      result = await indexer.indexDirectory(targetPath, options);
-      
-      // Add context files if available
-      if (hasContextFiles) {
-        const contextResult = await contextIndexer.indexContextOnly(currentBranch || 'main');
-        
-        if (contextResult.index_data) {
-          // Merge context chunks with regular index
-          const indexContent = fs.readFileSync(branchCachePath, 'utf8');
-          const indexData = JSON.parse(indexContent);
-          
-          // Add context chunks to the index
-          indexData.chunks = [...indexData.chunks, ...contextResult.index_data.chunks];
-          indexData.context_metadata = contextResult.index_data.context_metadata;
-          
-          // Save updated index
-          fs.writeFileSync(branchCachePath, JSON.stringify(indexData, null, 2));
-          
-          console.log(chalk.green(`✅ Added ${contextResult.total_chunks} context chunks to index`));
-        }
-      }
+      // Save the project context index
+      fs.writeFileSync(branchCachePath, JSON.stringify(result.index_data, null, 2));
     }
     
     // Display results
@@ -129,9 +122,10 @@ async function indexCommand(targetPath = '.', options = {}) {
     console.log(chalk.cyan(`📁 Files indexed: ${result.indexed_files}`));
     console.log(chalk.cyan(`📄 Total chunks: ${result.total_chunks}`));
     
-    if (result.context_focused) {
-      console.log(chalk.cyan(`🎯 Context-focused indexing used`));
-      console.log(chalk.cyan(`📋 Context types: ${result.context_types?.join(', ') || 'N/A'}`));
+    if (result.specs_focused) {
+      console.log(chalk.cyan(`📋 Specs-focused indexing used (feature branch)`));
+    } else if (result.context_type === 'project_context') {
+      console.log(chalk.cyan(`📚 Project context indexing used (main branch)`));
     }
     
     console.log(chalk.cyan(`⏱️  Processing time: ${result.processing_time_ms}ms`));
@@ -144,11 +138,13 @@ async function indexCommand(targetPath = '.', options = {}) {
     // Show next steps
     console.log(chalk.blue('\n🎯 Next steps:'));
     console.log(chalk.gray('  1. Run "context-rag query \'your question\'" to search'));
-    if (hasContextFiles) {
-      console.log(chalk.gray('  2. Context-focused search will prioritize specs and docs'));
+    if (currentBranch === 'main' || currentBranch === 'master') {
+      console.log(chalk.gray('  2. Main branch: searches project context (docs, architecture)'));
+    } else {
+      console.log(chalk.gray('  2. Feature branch: searches specs (requirements, design, tasks)'));
     }
     console.log(chalk.gray('  3. Use "context-rag branch" to manage branch caches'));
-    console.log(chalk.gray('  4. Use "context-rag watch" to auto-update on context changes'));
+    console.log(chalk.gray('  4. Use "context-rag watch" to auto-update on specs changes'));
     
   } catch (error) {
     console.error(chalk.red('❌ Error during indexing:'), error.message);

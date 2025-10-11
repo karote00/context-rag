@@ -61,10 +61,17 @@ async function statusCommand(options = {}) {
       console.log(chalk.yellow('   ⚠️  Not in a git repository'));
     }
 
-    // Check context using new context monitor
-    const { ContextMonitor } = require('../services/context-monitor');
-    const contextMonitor = new ContextMonitor(config);
-    const contextDiscovery = await contextMonitor.discoverContextFiles();
+    // Check specs and project context
+    const { SpecsMonitor } = require('../services/context-monitor');
+    const { ProjectContextIndexer } = require('../services/project-context-indexer');
+    
+    const specsMonitor = new SpecsMonitor(config);
+    const projectContextIndexer = new ProjectContextIndexer(config);
+    
+    const specsDiscovery = await specsMonitor.discoverContextFiles();
+    const projectContextFiles = await projectContextIndexer.discoverContextFiles(
+      projectContextIndexer.getContextPaths()
+    );
     
     // Check for handoff-ai integration
     const hasHandoffAI = require('fs').existsSync('.project') && 
@@ -74,25 +81,38 @@ async function statusCommand(options = {}) {
         file.includes('architecture') || file.endsWith('.md')
       );
 
-    // Context Status
-    console.log(chalk.cyan('\n🎯 Context Status:'));
-    if (contextDiscovery.totalFiles > 0) {
-      console.log(chalk.green(`   ✅ Found ${contextDiscovery.totalFiles} context files`));
-      console.log(chalk.gray(`   📂 Directories: ${contextDiscovery.directories.length}`));
-      
-      contextDiscovery.directories.forEach(dir => {
-        console.log(chalk.gray(`      ${dir.path} (${dir.files.length} files)`));
+    // Context & Specs Status
+    console.log(chalk.cyan('\n🎯 Content Status:'));
+    
+    // Project Context (main branch)
+    if (projectContextFiles.length > 0) {
+      console.log(chalk.green(`   📚 Project Context: ${projectContextFiles.length} files`));
+      console.log(chalk.gray(`      Used by: main branch (stable project knowledge)`));
+      projectContextFiles.slice(0, 3).forEach(file => {
+        console.log(chalk.gray(`      ${file.path}`));
       });
-      
-      const contextTypes = Array.from(contextDiscovery.contextTypes);
-      console.log(chalk.gray(`   🏷️  Types: ${contextTypes.join(', ')}`));
-      
-      if (hasHandoffAI) {
-        console.log(chalk.green('   🤖 Handoff-AI integration detected'));
+      if (projectContextFiles.length > 3) {
+        console.log(chalk.gray(`      ... and ${projectContextFiles.length - 3} more`));
       }
     } else {
-      console.log(chalk.yellow('   ⚠️  No context files found'));
-      console.log(chalk.gray('   Consider adding .kiro/specs/, .project/, or docs/ directories'));
+      console.log(chalk.yellow('   ⚠️  No project context files found'));
+      console.log(chalk.gray('      Configure context.include for docs/, .project/, README.md'));
+    }
+    
+    // Specs (feature branches)
+    if (specsDiscovery.totalFiles > 0) {
+      console.log(chalk.green(`   📋 Feature Specs: ${specsDiscovery.totalFiles} files`));
+      console.log(chalk.gray(`      Used by: feature branches (implementation docs)`));
+      specsDiscovery.directories.forEach(dir => {
+        console.log(chalk.gray(`      ${dir.path} (${dir.files.length} files)`));
+      });
+    } else {
+      console.log(chalk.yellow('   ⚠️  No specs files found'));
+      console.log(chalk.gray('      Configure specs.include for .kiro/specs/, requirements/, design/'));
+    }
+    
+    if (hasHandoffAI) {
+      console.log(chalk.green('   🤖 Handoff-AI integration detected'));
     }
 
     // Detect embedding engine

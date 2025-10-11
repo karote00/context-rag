@@ -178,25 +178,38 @@ function createConfig(contextInfo, embedderChoice) {
     }
   };
 
-  if (contextInfo) {
-    // Organized context detected - use it
-    return {
-      ...baseConfig,
-      index: {
-        include: [contextInfo.path],
-        exclude: ["node_modules/", ".git/", "dist/", "build/"]
-      }
-    };
-  } else {
-    // No organized context - provide educational default
-    return {
-      ...baseConfig,
-      index: {
-        include: [".project/"],
-        exclude: ["node_modules/", ".git/", "dist/", "build/"]
-      }
-    };
-  }
+  // Project context configuration (main branch - stable knowledge)
+  const contextConfig = {
+    include: [
+      ".project/",
+      "docs/", 
+      "README.md",
+      "ARCHITECTURE.md"
+    ],
+    exclude: ["node_modules/", ".git/", "dist/", "build/"]
+  };
+
+  // Feature specs configuration (feature branches - implementation docs)
+  const specsConfig = {
+    include: [
+      ".kiro/specs/",
+      "requirements/",
+      "design/"
+    ],
+    exclude: [
+      "node_modules",
+      ".git",
+      "package-lock.json",
+      "*.log"
+    ],
+    extensions: [".md", ".txt", ".yaml", ".yml", ".json"]
+  };
+
+  return {
+    ...baseConfig,
+    context: contextConfig,
+    specs: specsConfig
+  };
 }
 
 function createToolManifest() {
