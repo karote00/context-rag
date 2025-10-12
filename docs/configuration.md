@@ -88,12 +88,19 @@ Patterns for files/directories to exclude.
 Controls how semantic embeddings are generated.
 
 #### `type` (String)
-The embedder implementation to use.
+The embedder implementation to use. Context-rag auto-detects the best available option in this priority order:
 
-**Options:**
-- `"python"` - Use Python sentence-transformers (recommended)
-- `"rust"` - Use Rust-based embeddings (future)
-- `"openai"` - Use OpenAI embeddings API (via plugin)
+**Auto-Detection Priority:**
+1. `"rust"` - Fastest option (if compiled)
+2. `"python"` - High-quality embeddings (if sentence-transformers available)
+3. `"python-fast"` - Lightweight fallback (if Python available)
+4. `"nodejs"` - Always available built-in option
+
+**Manual Options:**
+- `"python"` - Use Python sentence-transformers
+- `"python-fast"` - Use lightweight Python embedder
+- `"rust"` - Use Rust-based embeddings
+- `"nodejs"` - Use Node.js built-in embedder
 
 #### `model` (String)
 The specific model to use for embeddings.

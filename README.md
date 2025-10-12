@@ -23,7 +23,7 @@ A lightweight CLI tool that helps AI agents understand your project by providing
 - **🎯 Smart Integration**: Auto-detects handoff-ai, docs/, and other context directories
 - **🌿 Branch-Aware**: Automatic git branch detection and caching
 - **🛡️ Branch Safety**: Prevents indexing mistakes with smart baseline enforcement
-- **⚡ Multi-Engine Support**: Rust (fastest) → Python (recommended) → Node.js (fallback)
+- **⚡ Multi-Engine Support**: Rust → Python → Python-Fast → Node.js with intelligent fallbacks
 
 ---
 
@@ -35,9 +35,10 @@ npm install -g context-rag
 
 That's it! Context-rag works out of the box with intelligent auto-detection:
 
-- **🦀 Rust**: Best performance (auto-detected if available)
-- **🐍 Python**: Great performance with `pip install sentence-transformers`
-- **📦 Node.js**: Always works as fallback (built-in)
+- **🦀 Rust**: Fastest option (auto-detected if available)
+- **🐍 Python**: High-quality embeddings with `pip install sentence-transformers`
+- **⚡ Python-Fast**: Lightweight fallback when sentence-transformers unavailable
+- **📦 Node.js**: Always available (built-in)
 
 ---
 
@@ -146,9 +147,9 @@ Context-rag lets you choose your preferred embedding engine with smart validatio
 context-rag init
 
 🔧 Choose your embedding engine:
-  1. Rust - Fastest performance (recommended)
-  2. Python - High-quality embeddings with sentence-transformers
-  3. Node.js - Always works, basic functionality
+  1. Rust - Recommended
+  2. Python - High-quality embeddings
+  3. Node.js - Always available
 
 Enter your choice (1-3): 2
 
