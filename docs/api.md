@@ -159,7 +159,7 @@ Monitors file system for changes and incrementally updates the index.
   "total_results": 1,
   "search_options": { "topK": 5 },
   "timestamp": "2024-01-01T12:00:00.000Z",
-  "model": "sentence-transformers/all-MiniLM-L6-v2"
+  "model": "fast-embedder"
 }
 ```
 
@@ -289,8 +289,8 @@ Monitors file system for changes and incrementally updates the index.
     ]
   },
   "embedder": {
-    "type": "python",
-    "model": "sentence-transformers/all-MiniLM-L6-v2"
+    "type": "python-fast",
+    "model": "fast-embedder"
   },
   "search": {
     "engine": "rust",
@@ -321,7 +321,7 @@ Monitors file system for changes and incrementally updates the index.
 - `exclude` - Array of glob patterns for files to exclude
 
 #### `embedder`
-- `type` - Embedder type: "python" or "rust"
+- `type` - Embedder type: "rust", "python-fast", or "nodejs"
 - `model` - Model name for embeddings
 
 #### `search`

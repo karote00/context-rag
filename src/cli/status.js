@@ -148,7 +148,7 @@ async function statusCommand(options = {}) {
     // Performance recommendations - prioritize Rust first
     if (engine === 'nodejs') {
       console.log(chalk.yellow('   • For best performance, install Rust: curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh'));
-      console.log(chalk.gray('   • Or install Python alternative: pip install sentence-transformers'));
+      console.log(chalk.gray('   • Or use fast Python embedder (no dependencies needed)'));
     } else if (engine === 'python') {
       console.log(chalk.yellow('   • For fastest performance, install Rust: curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh'));
     }

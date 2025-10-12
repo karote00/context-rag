@@ -17,8 +17,8 @@ When you run `context-rag init`, this default configuration is created:
     "exclude": ["node_modules/", ".git/", "dist/", "build/"]
   },
   "embedder": {
-    "type": "python",
-    "model": "sentence-transformers/all-MiniLM-L6-v2"
+    "type": "python-fast",
+    "model": "fast-embedder"
   },
   "search": {
     "engine": "rust",
@@ -91,24 +91,25 @@ Controls how semantic embeddings are generated.
 The embedder implementation to use. Context-rag auto-detects the best available option in this priority order:
 
 **Auto-Detection Priority:**
-1. `"rust"` - Fastest option (if compiled)
-2. `"python"` - High-quality embeddings (if sentence-transformers available)
-3. `"python-fast"` - Lightweight fallback (if Python available)
-4. `"nodejs"` - Always available built-in option
+1. `"rust"` - Fastest option with ML-quality embeddings (if compiled)
+2. `"python-fast"` - Lightweight TF-IDF embeddings (if Python available)
+3. `"nodejs"` - Always available built-in option
 
 **Manual Options:**
-- `"python"` - Use Python sentence-transformers
-- `"python-fast"` - Use lightweight Python embedder
-- `"rust"` - Use Rust-based embeddings
-- `"nodejs"` - Use Node.js built-in embedder
+- `"rust"` - Use Rust-based ML embeddings (fastest + highest quality)
+- `"python-fast"` - Use lightweight Python embedder (fast startup)
+- `"nodejs"` - Use Node.js built-in embedder (always available)
 
 #### `model` (String)
 The specific model to use for embeddings.
 
-**For Python embedder:**
+**For Rust embedder:**
 - `"sentence-transformers/all-MiniLM-L6-v2"` - Fast, good quality (default)
 - `"sentence-transformers/all-mpnet-base-v2"` - Higher quality, slower
 - `"sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"` - Multilingual
+
+**For Python-Fast embedder:**
+- `"fast-embedder"` - Lightweight TF-IDF + word hashing (only option)
 
 **For OpenAI embedder:**
 - `"text-embedding-ada-002"` - OpenAI's embedding model
@@ -327,7 +328,7 @@ For large projects:
     "max_size": "2GB"
   },
   "embedder": {
-    "type": "python",
+    "type": "rust",
     "model": "sentence-transformers/all-MiniLM-L6-v2"
   }
 }
@@ -424,7 +425,7 @@ Context-rag validates your configuration on startup. Common validation errors:
 ```json
 {
   "embedder": {
-    "type": "python",
+    "type": "rust",
     "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
   },
   "index": {

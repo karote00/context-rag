@@ -78,7 +78,7 @@ program
 // Switch command
 program
   .command('switch')
-  .description('Switch embedding engine (rust, python, python-fast, nodejs)')
+  .description('Switch embedding engine (rust, python-fast, nodejs)')
   .action(switchCommand);
 
 // Error handling

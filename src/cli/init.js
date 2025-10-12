@@ -159,7 +159,7 @@ function createConfig(contextInfo, embedderChoice) {
   const baseConfig = {
     embedder: {
       type: embedderChoice,
-      model: "sentence-transformers/all-MiniLM-L6-v2"
+      model: embedderChoice === 'rust' ? "sentence-transformers/all-MiniLM-L6-v2" : "fast-embedder"
     },
     search: {
       engine: "rust",

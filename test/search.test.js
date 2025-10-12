@@ -5,7 +5,7 @@ const { SearchService } = require('../src/services/search');
 describe('Search Service', () => {
   const testConfig = {
     embedder: {
-      type: "python",
+      type: "python-fast",
       model: "test-model"
     },
     search: {

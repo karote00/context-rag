@@ -12,7 +12,7 @@ describe('Performance Benchmarks', () => {
       exclude: ["node_modules/", ".git/"]
     },
     embedder: {
-      type: "python",
+      type: "python-fast",
       model: "test-model"
     },
     search: {

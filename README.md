@@ -35,10 +35,9 @@ npm install -g context-rag
 
 That's it! Context-rag works out of the box with intelligent auto-detection:
 
-- **🦀 Rust**: Fastest option (auto-detected if available)
-- **🐍 Python**: High-quality embeddings with `pip install sentence-transformers`
-- **⚡ Python-Fast**: Lightweight fallback when sentence-transformers unavailable
-- **📦 Node.js**: Always available (built-in)
+- **🦀 Rust**: Fastest option with ML-quality embeddings (auto-detected if available)
+- **⚡ Python-Fast**: Lightweight TF-IDF embeddings (~0.1s startup)
+- **📦 Node.js**: Always available built-in fallback
 
 ---
 
@@ -154,7 +153,7 @@ context-rag init
 Enter your choice (1-3): 2
 
 Checking Python availability...
-✅ Python + sentence-transformers ready
+✅ Fast Python embedder ready
 ```
 
 **Smart Validation:**

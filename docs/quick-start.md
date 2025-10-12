@@ -211,8 +211,8 @@ For better semantic search, configure embeddings:
 ```json
 {
   "embedder": {
-    "type": "python",
-    "model": "sentence-transformers/all-MiniLM-L6-v2"
+    "type": "python-fast",
+    "model": "fast-embedder"
   }
 }
 ```
@@ -256,9 +256,9 @@ If you have structured project context:
 
 ### Python Errors
 
-1. Install Python dependencies: `pip install sentence-transformers`
-2. The tool works without Python but with reduced functionality
-3. Check Python version: `python3 --version` (needs 3.8+)
+1. Ensure Python 3.x is installed: `python3 --version`
+2. The fast embedder requires no external dependencies
+3. If Python is missing, install from https://python.org/downloads
 
 ## Next Steps
 

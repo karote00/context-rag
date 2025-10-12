@@ -71,7 +71,7 @@ class EmbeddingService {
 
     // Priority 3: Fallback to Node.js
     console.log(chalk.yellow('⚠️  Using Node.js fallback'));
-    console.log(chalk.gray('   For better results, install Python + sentence-transformers or Rust'));
+    console.log(chalk.gray('   For better results, install Python (fast embedder) or Rust'));
     this.detectedEngine = 'nodejs';
     return 'nodejs';
   }
@@ -227,7 +227,7 @@ class EmbeddingService {
 
   createEnhancedEmbedding(text) {
     const words = text.toLowerCase().split(/\s+/);
-    const embedding = new Array(384).fill(0); // Match sentence-transformers dimension
+    const embedding = new Array(384).fill(0); // Standard embedding dimension
     
     // Create keyword-based features
     const keywordFeatures = this.extractKeywordFeatures(text);

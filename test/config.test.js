@@ -47,7 +47,7 @@ describe('Configuration Service', () => {
         exclude: ["node_modules/"]
       },
       embedder: {
-        type: "python",
+        type: "python-fast",
         model: "test-model"
       },
       search: {

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Fast lightweight embedder using TF-IDF + word vectors
-Much faster startup than sentence-transformers
+Fast lightweight embedder using TF-IDF + word hashing
+Optimized for speed with ~0.1s startup time
 """
 
 import json
@@ -17,7 +17,7 @@ class FastEmbedder:
     def __init__(self):
         """Initialize fast embedder with pre-computed word vectors"""
         # Simple word frequency-based embeddings
-        self.vocab_size = 384  # Match sentence-transformers dimension
+        self.vocab_size = 384  # Standard embedding dimension
         self.word_cache = {}
         
     def tokenize(self, text: str) -> List[str]:
