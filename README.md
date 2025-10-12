@@ -162,6 +162,8 @@ Checking Python availability...
 - **Fallback Options**: Shows alternatives if your first choice isn't available
 - **Performance Tips**: Explains the benefits of each engine
 
+> 🤔 **New to embeddings?** Check out our [complete guide](./docs/embeddings-explained.md) that explains what embeddings are and how each engine works!
+
 ### 📚 Smart Context Detection
 Context-rag automatically detects and optimizes for organized project documentation:
 
@@ -204,6 +206,7 @@ context-rag index
 
 ## 📚 Documentation
 
+- [How Embeddings Work](./docs/embeddings-explained.md) - **NEW!** Complete guide to embeddings in context-rag
 - [AI Agent Integration](./AGENTS.md) - How AI agents use context-rag for token savings
 - [API Reference](./docs/api.md) - Complete command documentation  
 - [Configuration](./docs/configuration.md) - Setup and options
