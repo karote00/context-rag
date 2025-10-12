@@ -11,6 +11,13 @@ node_modules/
 # Build outputs
 dist/
 build/
+target/
+
+# Context-RAG cache and data
+.context-rag/
+
+# Rust build artifacts
+Cargo.lock
 
 # Logs
 *.log
