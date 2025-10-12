@@ -8,6 +8,7 @@ const indexCommand = require('./cli/index');
 const queryCommand = require('./cli/query');
 const watchCommand = require('./cli/watch');
 const branchCommand = require('./cli/branch');
+const switchCommand = require('./cli/switch');
 
 const program = new Command();
 
@@ -73,6 +74,12 @@ program
   .description('Manage result transformer plugins')
   .option('-l, --list', 'List available transformers')
   .action(require('./cli/plugins'));
+
+// Switch command
+program
+  .command('switch')
+  .description('Switch embedding engine (rust, python, python-fast, nodejs)')
+  .action(switchCommand);
 
 // Error handling
 program.on('command:*', () => {

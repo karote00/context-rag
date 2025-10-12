@@ -24,6 +24,23 @@ class EmbeddingService {
       return this.detectedEngine;
     }
 
+    // Check for manual override in config
+    if (this.config.embedder?.type) {
+      console.log(chalk.blue('🔧 Using configured embedding engine...'));
+      this.detectedEngine = this.config.embedder.type;
+      
+      // Validate the configured engine
+      const engineNames = {
+        'rust': 'Rust embedder',
+        'python': 'Python embedder', 
+        'python-fast': 'fast Python embedder',
+        'nodejs': 'Node.js embedder'
+      };
+      
+      console.log(chalk.green(`✅ Using ${engineNames[this.detectedEngine] || this.detectedEngine}`));
+      return this.detectedEngine;
+    }
+
     console.log(chalk.blue('🔍 Auto-detecting embedding engine...'));
 
     // Priority 1: Check for Rust embedder
@@ -89,6 +106,8 @@ class EmbeddingService {
       case 'rust':
         return await this.generateRustEmbeddings(chunks);
       case 'python':
+        return await this.generatePythonEmbeddings(chunks);
+      case 'python-fast':
         return await this.generateFastPythonEmbeddings(chunks);
       case 'nodejs':
         return await this.generateNodeJsEmbeddings(chunks);
@@ -308,6 +327,8 @@ class EmbeddingService {
       case 'rust':
         return await this.embedTextRust(text);
       case 'python':
+        return await this.embedTextPython(text);
+      case 'python-fast':
         return await this.embedTextFastPython(text);
       case 'nodejs':
         return this.createEnhancedEmbedding(text);
