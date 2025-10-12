@@ -9,7 +9,7 @@ class EmbeddingService {
   constructor(config) {
     this.config = config;
     this.pythonPath = 'python3';
-    this.embedderScript = path.join(__dirname, '../../python/embedder.py');
+    this.fastEmbedderScript = path.join(__dirname, '../../python/fast_embedder.py');
     this.detectedEngine = null;
   }
 
@@ -46,12 +46,11 @@ class EmbeddingService {
     // Priority 2: Check for Python embedder
     try {
       await execAsync('python3 --version');
-      await execAsync('python3 -c "import sentence_transformers"');
       console.log(chalk.green('✅ Using Python embedder (good performance)'));
       this.detectedEngine = 'python';
       return 'python';
     } catch (error) {
-      console.log(chalk.gray('   Python/sentence-transformers not available'));
+      console.log(chalk.gray('   Python not available'));
     }
 
     // Priority 3: Fallback to Node.js
@@ -82,7 +81,7 @@ class EmbeddingService {
       case 'rust':
         return await this.generateRustEmbeddings(chunks);
       case 'python':
-        return await this.generatePythonEmbeddings(chunks);
+        return await this.generateFastPythonEmbeddings(chunks);
       case 'nodejs':
         return await this.generateNodeJsEmbeddings(chunks);
       default:
@@ -131,12 +130,12 @@ class EmbeddingService {
     });
   }
 
-  async generatePythonEmbeddings(chunks) {
+  async generateFastPythonEmbeddings(chunks) {
+    console.log(chalk.gray('⚡ Generating fast Python embeddings for', chunks.length, 'chunks'));
     return new Promise((resolve, reject) => {
       const process = spawn(this.pythonPath, [
-        this.embedderScript,
-        '--model', this.config.embedder.model,
-        '--cache-dir', path.join('.context-rag', 'embeddings')
+        this.fastEmbedderScript,
+        '--model', 'fast-embedder'
       ]);
 
       let stdout = '';
@@ -156,15 +155,15 @@ class EmbeddingService {
             const result = JSON.parse(stdout);
             resolve(result.chunks);
           } catch (error) {
-            reject(new Error(`Failed to parse embedding results: ${error.message}`));
+            reject(new Error(`Failed to parse fast embedding results: ${error.message}`));
           }
         } else {
-          reject(new Error(`Python embedder failed: ${stderr}`));
+          reject(new Error(`Fast Python embedder failed: ${stderr}`));
         }
       });
 
       process.on('error', (error) => {
-        reject(new Error(`Failed to start Python embedder: ${error.message}`));
+        reject(new Error(`Failed to start fast Python embedder: ${error.message}`));
       });
 
       // Send chunks data to Python process
@@ -172,6 +171,46 @@ class EmbeddingService {
       process.stdin.end();
     });
   }
+
+  async embedTextFastPython(text) {
+    return new Promise((resolve, reject) => {
+      const process = spawn(this.pythonPath, [
+        this.fastEmbedderScript,
+        '--text', text,
+        '--model', 'fast-embedder'
+      ]);
+
+      let stdout = '';
+      let stderr = '';
+
+      process.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      process.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      process.on('close', (code) => {
+        if (code === 0) {
+          try {
+            const result = JSON.parse(stdout);
+            resolve(result.embedding);
+          } catch (error) {
+            reject(new Error(`Failed to parse fast embedding result: ${error.message}`));
+          }
+        } else {
+          reject(new Error(`Fast Python embedder failed: ${stderr}`));
+        }
+      });
+
+      process.on('error', (error) => {
+        reject(new Error(`Failed to start fast Python embedder: ${error.message}`));
+      });
+    });
+  }
+  
+
 
   async generateNodeJsEmbeddings(chunks) {
     console.log(chalk.gray('📝 Generating Node.js embeddings for', chunks.length, 'chunks'));
@@ -261,7 +300,7 @@ class EmbeddingService {
       case 'rust':
         return await this.embedTextRust(text);
       case 'python':
-        return await this.embedTextPython(text);
+        return await this.embedTextFastPython(text);
       case 'nodejs':
         return this.createEnhancedEmbedding(text);
       default:
@@ -304,7 +343,11 @@ class EmbeddingService {
     });
   }
 
-  async embedTextPython(text) {
+
+
+
+  
+  async embedTextPythonDirect(text) {
     return new Promise((resolve, reject) => {
       const process = spawn(this.pythonPath, [
         this.embedderScript,
