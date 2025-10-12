@@ -311,17 +311,17 @@ async function initCommand(options = {}) {
       { 
         value: 'rust', 
         name: 'Rust', 
-        description: 'Fastest performance (recommended)' 
+        description: 'Recommended' 
       },
       { 
         value: 'python', 
         name: 'Python', 
-        description: 'High-quality embeddings with sentence-transformers' 
+        description: 'High-quality embeddings' 
       },
       { 
         value: 'nodejs', 
         name: 'Node.js', 
-        description: 'Always works, basic functionality' 
+        description: 'Always available' 
       }
     ];
 

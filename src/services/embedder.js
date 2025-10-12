@@ -15,9 +15,9 @@ class EmbeddingService {
 
   /**
    * Auto-detect available embedding engines in priority order:
-   * 1. Rust (best performance)
-   * 2. Python (good performance) 
-   * 3. Node.js (basic functionality)
+   * 1. Rust
+   * 2. Python 
+   * 3. Node.js
    */
   async detectEmbeddingEngine() {
     if (this.detectedEngine) {
@@ -33,7 +33,7 @@ class EmbeddingService {
       const rustEmbedderPath = path.join(__dirname, '../../target/release/context-rag-embedder');
       try {
         await execAsync(`${rustEmbedderPath} --version`);
-        console.log(chalk.green('✅ Using Rust embedder (best performance)'));
+        console.log(chalk.green('✅ Using Rust embedder'));
         this.detectedEngine = 'rust';
         return 'rust';
       } catch (error) {
@@ -46,15 +46,23 @@ class EmbeddingService {
     // Priority 2: Check for Python embedder
     try {
       await execAsync('python3 --version');
-      console.log(chalk.green('✅ Using Python embedder (good performance)'));
-      this.detectedEngine = 'python';
-      return 'python';
+      try {
+        await execAsync('python3 -c "import sentence_transformers"');
+        console.log(chalk.green('✅ Using Python embedder'));
+        this.detectedEngine = 'python';
+        return 'python';
+      } catch (sentenceTransformersError) {
+        // Fallback to fast embedder if sentence-transformers not available
+        console.log(chalk.yellow('✅ Using fast Python embedder'));
+        this.detectedEngine = 'python-fast';
+        return 'python-fast';
+      }
     } catch (error) {
       console.log(chalk.gray('   Python not available'));
     }
 
     // Priority 3: Fallback to Node.js
-    console.log(chalk.yellow('⚠️  Using Node.js fallback (basic functionality)'));
+    console.log(chalk.yellow('⚠️  Using Node.js fallback'));
     console.log(chalk.gray('   For better results, install Python + sentence-transformers or Rust'));
     this.detectedEngine = 'nodejs';
     return 'nodejs';
