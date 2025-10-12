@@ -1,6 +1,6 @@
 {
   "name": "context-rag",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Get relevant project context for AI agents to save 90% of tokens. Lightweight CLI tool for semantic search on project codebases.",
   "main": "src/index.js",
   "bin": {

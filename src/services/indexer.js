@@ -6,6 +6,7 @@ class ContextRagIndexer {
   constructor(config) {
     this.config = config;
     this.indexPath = config.storage.path;
+    this.embeddingService = null; // Will be initialized when needed
   }
 
   async indexDirectory(targetPath = '.', options = {}) {
@@ -70,6 +71,10 @@ class ContextRagIndexer {
     }
     
     fs.writeFileSync(this.indexPath, JSON.stringify(indexData, null, 2));
+    
+    // Generate embeddings for the chunks
+    console.log(chalk.blue('🧠 Generating embeddings...'));
+    await this.generateEmbeddings(indexData.chunks);
     
     const processingTime = performance.now() - startTime;
     
@@ -174,6 +179,34 @@ class ContextRagIndexer {
     }
     
     return chunks.length > 0 ? chunks : [content];
+  }
+
+  async generateEmbeddings(chunks) {
+    if (!this.embeddingService) {
+      const { EmbeddingService } = require('./embedder');
+      this.embeddingService = new EmbeddingService(this.config);
+    }
+
+    try {
+      const embeddedChunks = await this.embeddingService.generateEmbeddings(chunks);
+      
+      // Save embeddings separately for better performance
+      const embeddingsPath = this.indexPath.replace('.db', '_embeddings.json');
+      const embeddingsData = {
+        model: this.config.embedder.model,
+        chunks: embeddedChunks
+      };
+      
+      const fs = require('fs');
+      fs.writeFileSync(embeddingsPath, JSON.stringify(embeddingsData, null, 2));
+      
+      console.log(chalk.green(`✅ Generated embeddings for ${embeddedChunks.length} chunks`));
+      console.log(chalk.gray(`💾 Embeddings saved to: ${embeddingsPath}`));
+      
+    } catch (error) {
+      console.warn(chalk.yellow(`⚠️  Failed to generate embeddings: ${error.message}`));
+      console.log(chalk.gray('Search functionality will be limited without embeddings'));
+    }
   }
 }
 

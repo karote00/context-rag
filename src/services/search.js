@@ -100,8 +100,10 @@ class SearchService {
     results.sort((a, b) => b.similarity - a.similarity);
     let topResults = results.slice(0, topK * 2); // Get more results for context filtering
     
-    // Filter out very low similarity results
-    topResults = topResults.filter(result => result.similarity > 0.1);
+    // Filter out very low similarity results (more lenient for Node.js embedder)
+    const engine = await this.embeddingService.detectEmbeddingEngine();
+    const similarityThreshold = engine === 'nodejs' ? 0.01 : 0.1;
+    topResults = topResults.filter(result => result.similarity > similarityThreshold);
     
     // Apply context-aware filtering if project context is available
     if (this.indexData.context_metadata) {

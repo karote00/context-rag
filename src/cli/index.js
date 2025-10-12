@@ -108,6 +108,11 @@ async function indexCommand(targetPath = '.', options = {}) {
       // Save the specs-focused index
       fs.writeFileSync(branchCachePath, JSON.stringify(result.index_data, null, 2));
       
+      // Generate embeddings for specs
+      if (result.index_data && result.index_data.chunks.length > 0) {
+        await generateEmbeddingsForIndex(result.index_data.chunks, branchCachePath, config);
+      }
+      
     } else {
       // Main branch - use project context indexing
       console.log(chalk.blue('🚀 Building project context index for main branch...'));
@@ -115,6 +120,11 @@ async function indexCommand(targetPath = '.', options = {}) {
       
       // Save the project context index
       fs.writeFileSync(branchCachePath, JSON.stringify(result.index_data, null, 2));
+      
+      // Generate embeddings for project context
+      if (result.index_data && result.index_data.chunks.length > 0) {
+        await generateEmbeddingsForIndex(result.index_data.chunks, branchCachePath, config);
+      }
     }
     
     // Display results
@@ -149,6 +159,33 @@ async function indexCommand(targetPath = '.', options = {}) {
   } catch (error) {
     console.error(chalk.red('❌ Error during indexing:'), error.message);
     process.exit(1);
+  }
+}
+
+async function generateEmbeddingsForIndex(chunks, indexPath, config) {
+  try {
+    console.log(chalk.blue('🧠 Generating embeddings...'));
+    
+    const { EmbeddingService } = require('../services/embedder');
+    const embeddingService = new EmbeddingService(config);
+    
+    const embeddedChunks = await embeddingService.generateEmbeddings(chunks);
+    
+    // Save embeddings separately for better performance
+    const embeddingsPath = indexPath.replace('.db', '_embeddings.json');
+    const embeddingsData = {
+      model: config.embedder.model,
+      chunks: embeddedChunks
+    };
+    
+    fs.writeFileSync(embeddingsPath, JSON.stringify(embeddingsData, null, 2));
+    
+    console.log(chalk.green(`✅ Generated embeddings for ${embeddedChunks.length} chunks`));
+    console.log(chalk.gray(`💾 Embeddings saved to: ${embeddingsPath}`));
+    
+  } catch (error) {
+    console.warn(chalk.yellow(`⚠️  Failed to generate embeddings: ${error.message}`));
+    console.log(chalk.gray('Search functionality will be limited without embeddings'));
   }
 }
 
