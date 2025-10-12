@@ -5,7 +5,7 @@ const { PluginManager } = require('../src/services/plugins');
 
 describe('Plugin Manager', () => {
   const testConfig = {
-    embedder: { type: "python", model: "test-model" },
+    embedder: { type: "python-fast", model: "test-model" },
     search: { engine: "rust", top_k: 5 }
   };
 

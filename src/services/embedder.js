@@ -32,7 +32,6 @@ class EmbeddingService {
       // Validate the configured engine
       const engineNames = {
         'rust': 'Rust embedder',
-        'python': 'Python embedder', 
         'python-fast': 'fast Python embedder',
         'nodejs': 'Node.js embedder'
       };
@@ -60,20 +59,12 @@ class EmbeddingService {
       console.log(chalk.gray('   Rust not available'));
     }
 
-    // Priority 2: Check for Python embedder
+    // Priority 2: Check for fast Python embedder
     try {
       await execAsync('python3 --version');
-      try {
-        await execAsync('python3 -c "import sentence_transformers"');
-        console.log(chalk.green('✅ Using Python embedder'));
-        this.detectedEngine = 'python';
-        return 'python';
-      } catch (sentenceTransformersError) {
-        // Fallback to fast embedder if sentence-transformers not available
-        console.log(chalk.yellow('✅ Using fast Python embedder'));
-        this.detectedEngine = 'python-fast';
-        return 'python-fast';
-      }
+      console.log(chalk.yellow('✅ Using fast Python embedder'));
+      this.detectedEngine = 'python-fast';
+      return 'python-fast';
     } catch (error) {
       console.log(chalk.gray('   Python not available'));
     }
@@ -85,19 +76,7 @@ class EmbeddingService {
     return 'nodejs';
   }
 
-  async checkPythonDependencies() {
-    return new Promise((resolve) => {
-      const process = spawn(this.pythonPath, ['-c', 'import sentence_transformers; print("OK")']);
-      
-      process.on('close', (code) => {
-        resolve(code === 0);
-      });
-      
-      process.on('error', () => {
-        resolve(false);
-      });
-    });
-  }
+
 
   async generateEmbeddings(chunks) {
     const engine = await this.detectEmbeddingEngine();
@@ -105,8 +84,6 @@ class EmbeddingService {
     switch (engine) {
       case 'rust':
         return await this.generateRustEmbeddings(chunks);
-      case 'python':
-        return await this.generatePythonEmbeddings(chunks);
       case 'python-fast':
         return await this.generateFastPythonEmbeddings(chunks);
       case 'nodejs':
@@ -326,8 +303,6 @@ class EmbeddingService {
     switch (engine) {
       case 'rust':
         return await this.embedTextRust(text);
-      case 'python':
-        return await this.embedTextPython(text);
       case 'python-fast':
         return await this.embedTextFastPython(text);
       case 'nodejs':
@@ -376,43 +351,7 @@ class EmbeddingService {
 
 
   
-  async embedTextPythonDirect(text) {
-    return new Promise((resolve, reject) => {
-      const process = spawn(this.pythonPath, [
-        this.embedderScript,
-        '--text', text,
-        '--model', this.config.embedder.model
-      ]);
 
-      let stdout = '';
-      let stderr = '';
-
-      process.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      process.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      process.on('close', (code) => {
-        if (code === 0) {
-          try {
-            const result = JSON.parse(stdout);
-            resolve(result.embedding);
-          } catch (error) {
-            reject(new Error(`Failed to parse embedding result: ${error.message}`));
-          }
-        } else {
-          reject(new Error(`Python embedder failed: ${stderr}`));
-        }
-      });
-
-      process.on('error', (error) => {
-        reject(new Error(`Failed to start Python embedder: ${error.message}`));
-      });
-    });
-  }
 }
 
 module.exports = { EmbeddingService };

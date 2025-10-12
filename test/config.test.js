@@ -95,7 +95,7 @@ describe('Configuration Service', () => {
   it('should save configuration', async () => {
     const testConfig = {
       index: { include: ["*.md"], exclude: [] },
-      embedder: { type: "python", model: "test" },
+      embedder: { type: "python-fast", model: "test" },
       search: { engine: "rust", top_k: 3 },
       storage: { type: "sqlite", path: "test.db" }
     };

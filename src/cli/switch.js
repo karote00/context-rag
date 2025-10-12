@@ -59,11 +59,7 @@ async function switchCommand(options = {}) {
         name: 'Rust', 
         description: 'Fastest option (if available)' 
       },
-      { 
-        value: 'python', 
-        name: 'Python', 
-        description: 'High-quality embeddings (requires sentence-transformers)' 
-      },
+
       { 
         value: 'python-fast', 
         name: 'Python-Fast', 

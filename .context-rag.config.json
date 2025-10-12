@@ -13,8 +13,8 @@
     ]
   },
   "embedder": {
-    "type": "python",
-    "model": "sentence-transformers/all-MiniLM-L6-v2"
+    "type": "python-fast",
+    "model": "fast-embedder"
   },
   "search": {
     "engine": "rust",

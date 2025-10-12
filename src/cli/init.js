@@ -116,10 +116,9 @@ async function checkEngineAvailability(engineType) {
             suggestion: 'Run: cargo build --release'
           };
         }
-      case 'python':
+      case 'python-fast':
         await execAsync('python3 --version');
-        await execAsync('python3 -c "import sentence_transformers"');
-        return { available: true, message: 'Python + sentence-transformers ready' };
+        return { available: true, message: 'Fast Python embedder ready' };
       case 'nodejs':
         return { available: true, message: 'Node.js fallback (always available)' };
       default:
@@ -134,20 +133,19 @@ async function checkEngineAvailability(engineType) {
           suggestion: 'Install Rust: curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh',
           fallback: 'You can use Python or Node.js instead for now'
         };
-      case 'python':
-        // Check if it's Python missing or just sentence-transformers
+      case 'python-fast':
         try {
           await execAsync('python3 --version');
           return { 
             available: false, 
-            message: 'Python found but sentence-transformers not installed',
-            suggestion: 'Install: pip install sentence-transformers'
+            message: 'Python not installed',
+            suggestion: 'Install Python: https://python.org/downloads'
           };
         } catch {
           return { 
             available: false, 
             message: 'Python not installed',
-            suggestion: 'Install Python: https://python.org/downloads then run: pip install sentence-transformers',
+            suggestion: 'Install Python: https://python.org/downloads',
             fallback: 'You can use Node.js fallback for now'
           };
         }
@@ -314,9 +312,9 @@ async function initCommand(options = {}) {
         description: 'Recommended' 
       },
       { 
-        value: 'python', 
-        name: 'Python', 
-        description: 'High-quality embeddings' 
+        value: 'python-fast', 
+        name: 'Python-Fast', 
+        description: 'Lightweight embeddings' 
       },
       { 
         value: 'nodejs', 
