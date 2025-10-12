@@ -212,6 +212,55 @@ function createConfig(contextInfo, embedderChoice) {
   };
 }
 
+function updateGitignore(embedderChoice) {
+  const gitignorePath = '.gitignore';
+  const contextRagEntries = [
+    '',
+    '# Context-RAG cache and data',
+    '.context-rag/',
+  ];
+  
+  // Add engine-specific entries
+  if (embedderChoice === 'rust') {
+    contextRagEntries.push('');
+    contextRagEntries.push('# Rust build artifacts (context-rag)');
+    contextRagEntries.push('target/');
+    contextRagEntries.push('Cargo.lock');
+  }
+  
+  contextRagEntries.push('');
+  
+  let gitignoreContent = '';
+  let needsUpdate = false;
+  
+  // Read existing .gitignore if it exists
+  if (fs.existsSync(gitignorePath)) {
+    gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
+    
+    // Check if .context-rag/ is already ignored
+    if (!gitignoreContent.includes('.context-rag/')) {
+      needsUpdate = true;
+    }
+  } else {
+    // Create new .gitignore
+    needsUpdate = true;
+  }
+  
+  if (needsUpdate) {
+    // Add context-rag entries to .gitignore
+    const updatedContent = gitignoreContent + contextRagEntries.join('\n');
+    fs.writeFileSync(gitignorePath, updatedContent);
+    
+    if (embedderChoice === 'rust') {
+      console.log(chalk.green('Updated .gitignore to exclude .context-rag/ and Rust build artifacts'));
+    } else {
+      console.log(chalk.green('Updated .gitignore to exclude .context-rag/ directory'));
+    }
+  } else {
+    console.log(chalk.gray('.gitignore already configured for context-rag'));
+  }
+}
+
 function createToolManifest() {
   const toolManifestPath = '.context-rag/tool-info.json';
   
@@ -306,6 +355,9 @@ async function initCommand(options = {}) {
         console.log(chalk.green(`✅ Organized context detected: ${contextInfo.name}`));
       }
     }
+
+    // Update .gitignore to exclude context-rag cache
+    updateGitignore(chosenEngine.value);
 
     // Create tool info for AI integration
     createToolManifest();
