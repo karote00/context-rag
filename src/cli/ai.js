@@ -20,11 +20,16 @@ async function aiCommand(query, options = {}) {
     }
 
     const topK = parseInt(options.topK) || config.search.top_k || 5;
+    const filters = {
+      tags: options.tags ? options.tags.split(',').map(t => t.trim()) : undefined,
+      type: options.type,
+      feature: options.feature,
+    };
     
     // Perform search with silent mode to suppress any potential output from API service
     const apiResult = await withSilentModeAsync(async () => {
       const apiService = new APIService(config);
-      return await apiService.query(query, { topK });
+      return await apiService.query(query, { topK, filters });
     }, true);
     
     // Format for AI consumption - optimized for token efficiency

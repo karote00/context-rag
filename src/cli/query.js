@@ -25,6 +25,11 @@ async function queryCommand(query, options = {}) {
     }
 
     const topK = parseInt(options.topK) || config.search.top_k || 5;
+    const filters = {
+      tags: options.tags ? options.tags.split(',').map(t => t.trim()) : undefined,
+      type: options.type,
+      feature: options.feature,
+    };
     
     // Perform operations with silent mode when in JSON mode
     const { apiService, indexStatus, apiResult } = await withSilentModeAsync(async () => {
@@ -35,7 +40,7 @@ async function queryCommand(query, options = {}) {
         throw new Error('INDEX_NOT_FOUND');
       }
       
-      const apiResult = await apiService.query(query, { topK });
+      const apiResult = await apiService.query(query, { topK, filters });
       
       if (apiResult.error) {
         throw new Error(apiResult.error);
