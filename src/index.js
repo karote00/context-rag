@@ -72,6 +72,8 @@ program
   .option('--tags <tags>', 'Filter by tags (comma-separated)')
   .option('--type <type>', 'Filter by a specific type')
   .option('--feature <feature>', 'Filter by a specific feature')
+  .option('-s, --summarize', 'Summarize the retrieved context')
+  .option('--max-tokens <number>', 'Maximum tokens for summarized context (requires --summarize)')
   .action(require('./cli/ai'));
 
 // Plugins command
