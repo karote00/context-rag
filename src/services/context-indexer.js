@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
+const matter = require('gray-matter');
 const { SpecsMonitor } = require('./context-monitor');
 
 /**
@@ -57,7 +58,7 @@ class SpecsIndexer {
    */
   async processSpecsFiles(specsDiscovery, branchName) {
     const chunks = [];
-    const processedFiles = [];
+    const processedFiles = {}; // Use object for easier access
     let totalChunks = 0;
     
     console.log(chalk.blue(`📄 Processing ${specsDiscovery.totalFiles} specs files...`));
@@ -65,16 +66,16 @@ class SpecsIndexer {
     // Process files
     for (const file of specsDiscovery.files) {
       try {
-        const fileChunks = await this.processContextFile(file);
+        const { chunks: fileChunks, metadata } = await this.processContextFile(file);
         chunks.push(...fileChunks);
         totalChunks += fileChunks.length;
         
-        processedFiles.push({
-          path: file.path,
+        processedFiles[file.path] = {
           chunks: fileChunks.length,
           contextType: file.contextType,
-          priority: file.priority
-        });
+          priority: file.priority,
+          metadata: metadata || {},
+        };
         
         console.log(chalk.gray(`   📝 ${file.path} → ${fileChunks.length} chunks`));
         
@@ -90,7 +91,7 @@ class SpecsIndexer {
         branch: branchName,
         version: '0.2.0',
         specs_focused: true,
-        total_files: processedFiles.length,
+        total_files: Object.keys(processedFiles).length,
         total_chunks: totalChunks,
         specs_directories: specsDiscovery.directories.map(d => d.path)
       },
@@ -103,7 +104,7 @@ class SpecsIndexer {
     };
     
     return {
-      indexed_files: processedFiles.length,
+      indexed_files: Object.keys(processedFiles).length,
       total_chunks: totalChunks,
       index_data: indexData
     };
@@ -116,7 +117,8 @@ class SpecsIndexer {
    */
   async processContextFile(fileInfo) {
     try {
-      const content = fs.readFileSync(fileInfo.path, 'utf8');
+      const fileContent = fs.readFileSync(fileInfo.path, 'utf8');
+      const { data: metadata, content } = matter(fileContent);
       const chunks = [];
       
       // Different chunking strategies based on file type
@@ -140,11 +142,11 @@ class SpecsIndexer {
           chunks.push(...this.chunkGeneralMarkdown(content, fileInfo));
       }
       
-      return chunks;
+      return { chunks, metadata };
       
     } catch (error) {
       console.warn(chalk.yellow(`Warning: Could not read file ${fileInfo.path}: ${error.message}`));
-      return [];
+      return { chunks: [], metadata: {} };
     }
   }
   
