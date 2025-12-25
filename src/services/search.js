@@ -5,6 +5,7 @@ const { EmbeddingService } = require('./embedder');
 const { GitService } = require('./git');
 const { ContextService } = require('./context');
 const { ContextMerger } = require('./merger');
+const { HandoffAIService } = require('./handoff-ai'); // Import HandoffAIService
 
 class SearchService {
   constructor(config) {
@@ -13,6 +14,7 @@ class SearchService {
     this.gitService = new GitService(config);
     this.contextService = new ContextService(config);
     this.contextMerger = new ContextMerger(config, this.gitService);
+    this.handoffAIService = new HandoffAIService(config); // Instantiate HandoffAIService
     this.indexData = null;
   }
 
@@ -74,11 +76,45 @@ class SearchService {
     
     console.log(chalk.blue(`🔍 Searching for: "${query}"`));
 
-    // Filter chunks based on metadata before searching
+    let combinedResults = [];
+
+    // Step 1: Query Handoff-AI knowledge base if enabled
+    if (this.handoffAIService.enabled) {
+      const handoffAIResponse = await this.handoffAIService.queryKnowledgeBase(query, filters);
+      if (handoffAIResponse.results.length > 0) {
+        console.log(chalk.magenta(`🤖 Found ${handoffAIResponse.results.length} results from Handoff-AI knowledge base.`));
+        // Format Handoff-AI results to match existing result structure
+        const formattedHandoffAIResults = handoffAIResponse.results.map(item => ({
+          file_path: item.metadata.source || 'handoff-ai-kb',
+          content: item.content,
+          snippet: item.content.substring(0, 200) + '...',
+          similarity: 1.0, // Assume perfect relevance for structured facts
+          chunk_index: 0,
+          source_type: 'structured-kb',
+          context_category: item.metadata.type || 'fact',
+          priority_score: 100, // High priority for structured facts
+          is_context: true,
+          context_type: item.metadata.type || 'fact',
+          metadata: item.metadata // Include original metadata
+        }));
+        combinedResults.push(...formattedHandoffAIResults);
+      }
+    }
+
+    // Step 2: Perform local index search
+    const hasActiveFilters = Object.values(filters).some(f => f !== undefined && f !== '' && (Array.isArray(f) ? f.length > 0 : true));
+
     const allChunks = this.indexData.chunks;
     const filteredChunks = allChunks.filter(chunk => {
       const fileMeta = this.indexData.files[chunk.file_path]?.metadata;
-      if (!fileMeta) return true; // Keep chunk if no metadata is available for its file
+      
+      if (!hasActiveFilters) {
+        return true; // No filters, keep all chunks
+      }
+
+      if (!fileMeta) {
+        return false; // Filters are active, but file has no metadata, so filter it out
+      }
 
       // Feature filter (AND)
       if (filters.feature && fileMeta.feature !== filters.feature) {
@@ -95,7 +131,6 @@ class SearchService {
         if (!fileMeta.tags || !Array.isArray(fileMeta.tags)) {
           return false; // File has no tags, so it can't match
         }
-        // Check if at least one of the file's tags is in the filter's tags
         const hasMatchingTag = fileMeta.tags.some(fileTag => filters.tags.includes(fileTag));
         if (!hasMatchingTag) {
           return false;
@@ -105,7 +140,7 @@ class SearchService {
       return true; // Chunk passes all filters
     });
 
-    if (Object.values(filters).some(f => f !== undefined)) {
+    if (hasActiveFilters) {
       console.log(chalk.gray(`🔬 Applied filters, searching over ${filteredChunks.length} chunks (out of ${allChunks.length})`));
     }
     
@@ -113,7 +148,7 @@ class SearchService {
     const queryEmbedding = await this.embeddingService.embedText(query);
     
     // Calculate similarities
-    const results = [];
+    const localResults = [];
     
     for (const chunk of filteredChunks) {
       if (!chunk.embedding) {
@@ -123,7 +158,7 @@ class SearchService {
       
       const similarity = this.cosineSimilarity(queryEmbedding, chunk.embedding);
       
-      results.push({
+      localResults.push({
         file_path: chunk.file_path,
         content: chunk.content,
         chunk_index: chunk.chunk_index,
@@ -133,25 +168,32 @@ class SearchService {
     }
     
     // Sort by similarity and take top K
-    results.sort((a, b) => b.similarity - a.similarity);
-    let topResults = results.slice(0, topK * 2); // Get more results for context filtering
+    localResults.sort((a, b) => b.similarity - a.similarity);
+    let topLocalResults = localResults.slice(0, topK * 2); // Get more results for context filtering
     
     // Filter out very low similarity results (more lenient for Node.js embedder)
     const engine = await this.embeddingService.detectEmbeddingEngine();
-    const similarityThreshold = engine === 'nodejs' ? 0.01 : 0.1;
-    topResults = topResults.filter(result => result.similarity > similarityThreshold);
+    const defaultSimilarityThreshold = engine === 'nodejs' ? 0.01 : 0.1;
+    const similarityThreshold = this.config.search.similarity_threshold !== undefined
+      ? this.config.search.similarity_threshold
+      : defaultSimilarityThreshold;
+    topLocalResults = topLocalResults.filter(result => result.similarity > similarityThreshold);
     
     // Apply context-aware filtering if project context is available
     if (this.indexData.context_metadata) {
       console.log(chalk.gray('🎯 Applying context-aware search filtering'));
-      topResults = await this.contextService.searchContext(query, topResults, Math.ceil(topK * 0.6));
+      topLocalResults = await this.contextService.searchContext(query, topLocalResults, Math.ceil(topK * 0.6));
     }
     
     // Enhance results with context information
-    const enhancedResults = await this.contextService.enhanceSearchResults(topResults);
+    const enhancedLocalResults = await this.contextService.enhanceSearchResults(topLocalResults);
     
+    // Combine and re-sort all results
+    combinedResults.push(...enhancedLocalResults);
+    combinedResults.sort((a, b) => (b.priority_score || b.similarity) - (a.priority_score || a.similarity));
+
     // Take final top K results
-    const finalResults = enhancedResults.slice(0, topK);
+    const finalResults = combinedResults.slice(0, topK);
     
     return finalResults;
   }
