@@ -70,8 +70,44 @@ class SearchService {
     }
 
     const topK = options.topK || this.config.search.top_k || 5;
+    const filters = options.filters || {};
     
     console.log(chalk.blue(`🔍 Searching for: "${query}"`));
+
+    // Filter chunks based on metadata before searching
+    const allChunks = this.indexData.chunks;
+    const filteredChunks = allChunks.filter(chunk => {
+      const fileMeta = this.indexData.files[chunk.file_path]?.metadata;
+      if (!fileMeta) return true; // Keep chunk if no metadata is available for its file
+
+      // Feature filter (AND)
+      if (filters.feature && fileMeta.feature !== filters.feature) {
+        return false;
+      }
+
+      // Type filter (AND)
+      if (filters.type && fileMeta.type !== filters.type) {
+        return false;
+      }
+
+      // Tags filter (AND with internal OR)
+      if (filters.tags && filters.tags.length > 0) {
+        if (!fileMeta.tags || !Array.isArray(fileMeta.tags)) {
+          return false; // File has no tags, so it can't match
+        }
+        // Check if at least one of the file's tags is in the filter's tags
+        const hasMatchingTag = fileMeta.tags.some(fileTag => filters.tags.includes(fileTag));
+        if (!hasMatchingTag) {
+          return false;
+        }
+      }
+
+      return true; // Chunk passes all filters
+    });
+
+    if (Object.values(filters).some(f => f !== undefined)) {
+      console.log(chalk.gray(`🔬 Applied filters, searching over ${filteredChunks.length} chunks (out of ${allChunks.length})`));
+    }
     
     // Generate query embedding
     const queryEmbedding = await this.embeddingService.embedText(query);
@@ -79,7 +115,7 @@ class SearchService {
     // Calculate similarities
     const results = [];
     
-    for (const chunk of this.indexData.chunks) {
+    for (const chunk of filteredChunks) {
       if (!chunk.embedding) {
         // Skip chunks without embeddings
         continue;
