@@ -5,7 +5,6 @@ const { EmbeddingService } = require('./embedder');
 const { GitService } = require('./git');
 const { ContextService } = require('./context');
 const { ContextMerger } = require('./merger');
-const { HandoffAIService } = require('./handoff-ai'); // Import HandoffAIService
 
 class SearchService {
   constructor(config) {
@@ -14,7 +13,6 @@ class SearchService {
     this.gitService = new GitService(config);
     this.contextService = new ContextService(config);
     this.contextMerger = new ContextMerger(config, this.gitService);
-    this.handoffAIService = new HandoffAIService(config); // Instantiate HandoffAIService
     this.indexData = null;
   }
 
@@ -79,27 +77,8 @@ class SearchService {
     let combinedResults = [];
 
     // Step 1: Query Handoff-AI knowledge base if enabled
-    if (this.handoffAIService.enabled) {
-      const handoffAIResponse = await this.handoffAIService.queryKnowledgeBase(query, filters);
-      if (handoffAIResponse.results.length > 0) {
-        console.log(chalk.magenta(`🤖 Found ${handoffAIResponse.results.length} results from Handoff-AI knowledge base.`));
-        // Format Handoff-AI results to match existing result structure
-        const formattedHandoffAIResults = handoffAIResponse.results.map(item => ({
-          file_path: item.metadata.source || 'handoff-ai-kb',
-          content: item.content,
-          snippet: item.content.substring(0, 200) + '...',
-          similarity: 1.0, // Assume perfect relevance for structured facts
-          chunk_index: 0,
-          source_type: 'structured-kb',
-          context_category: item.metadata.type || 'fact',
-          priority_score: 100, // High priority for structured facts
-          is_context: true,
-          context_type: item.metadata.type || 'fact',
-          metadata: item.metadata // Include original metadata
-        }));
-        combinedResults.push(...formattedHandoffAIResults);
-      }
-    }
+    // Removed Handoff-AI integration as per user's request for standalone project.
+    // This section is intentionally left out.
 
     // Step 2: Perform local index search
     const hasActiveFilters = Object.values(filters).some(f => f !== undefined && f !== '' && (Array.isArray(f) ? f.length > 0 : true));
