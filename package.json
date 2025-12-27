@@ -56,6 +56,7 @@
     "chokidar": "^4.0.3",
     "commander": "^11.1.0",
     "gray-matter": "^4.0.3",
-    "simple-git": "^3.20.0"
+    "simple-git": "^3.20.0",
+    "axios": "^1.6.5"
   }
 }
