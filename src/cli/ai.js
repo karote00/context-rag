@@ -1,6 +1,7 @@
 const { loadConfig } = require('../services/config');
 const { APIService } = require('../services/api');
 const { withSilentModeAsync } = require('../utils/silent-mode');
+const { SummarizationService } = require('../services/summarization'); // Placeholder
 
 async function aiCommand(query, options = {}) {
   try {
@@ -20,24 +21,42 @@ async function aiCommand(query, options = {}) {
     }
 
     const topK = parseInt(options.topK) || config.search.top_k || 5;
+    const filters = {
+      tags: options.tags ? options.tags.split(',').map(t => t.trim()) : undefined,
+      type: options.type,
+      feature: options.feature,
+    };
+    const summarize = options.summarize || false;
+    const maxTokens = parseInt(options.maxTokens) || config.summarization?.max_tokens || 500;
     
     // Perform search with silent mode to suppress any potential output from API service
     const apiResult = await withSilentModeAsync(async () => {
       const apiService = new APIService(config);
-      return await apiService.query(query, { topK });
+      return await apiService.query(query, { topK, filters });
     }, true);
+
+    let contextSummary = generateContextSummary(apiResult.results);
+    let codeContext = apiResult.results.slice(0, 3).map(result => ({
+      file: result.file_path,
+      snippet: result.snippet || result.content.substring(0, 200) + '...',
+      relevance: Math.round(result.similarity * 100) / 100
+    }));
+
+    if (summarize && apiResult.results.length > 0) {
+      const summarizationService = new SummarizationService(config);
+      const fullContext = apiResult.results.map(r => r.content).join('\n\n');
+      const summarizedText = await summarizationService.summarize(query, fullContext, maxTokens);
+      contextSummary = summarizedText;
+      codeContext = []; // Clear code context if summarized
+    }
     
     // Format for AI consumption - optimized for token efficiency
     const aiResponse = {
       status: apiResult.error ? 'error' : 'success',
       context: apiResult.error ? null : {
         query: apiResult.query,
-        context_summary: generateContextSummary(apiResult.results),
-        code_context: apiResult.results.slice(0, 3).map(result => ({
-          file: result.file_path,
-          snippet: result.snippet || result.content.substring(0, 200) + '...',
-          relevance: Math.round(result.similarity * 100) / 100
-        })),
+        context_summary: contextSummary,
+        code_context: codeContext,
         total_results: apiResult.total_results
       },
       message: apiResult.error || undefined,

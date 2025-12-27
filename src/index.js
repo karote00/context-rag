@@ -38,6 +38,9 @@ program
   .description('Search project context using natural language')
   .option('-k, --top-k <number>', 'Number of results to return', '5')
   .option('--json', 'Output results in JSON format')
+  .option('--tags <tags>', 'Filter by tags (comma-separated)')
+  .option('--type <type>', 'Filter by a specific type')
+  .option('--feature <feature>', 'Filter by a specific feature')
   .action(queryCommand);
 
 // Watch command
@@ -66,6 +69,11 @@ program
   .command('ai <query>')
   .description('Get project context for AI agents (token-efficient JSON output)')
   .option('-k, --top-k <number>', 'Number of results to return', '5')
+  .option('--tags <tags>', 'Filter by tags (comma-separated)')
+  .option('--type <type>', 'Filter by a specific type')
+  .option('--feature <feature>', 'Filter by a specific feature')
+  .option('-s, --summarize', 'Summarize the retrieved context')
+  .option('--max-tokens <number>', 'Maximum tokens for summarized context (requires --summarize)')
   .action(require('./cli/ai'));
 
 // Plugins command

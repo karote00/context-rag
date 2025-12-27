@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
+const matter = require('gray-matter');
 
 /**
  * Project context indexer for main branch
@@ -156,22 +157,22 @@ class ProjectContextIndexer {
    */
   async processContextFiles(contextFiles) {
     const chunks = [];
-    const processedFiles = [];
+    const processedFiles = {}; // Use an object with path as key
     let totalChunks = 0;
     
     console.log(chalk.blue(`📄 Processing ${contextFiles.length} project context files...`));
     
     for (const file of contextFiles) {
       try {
-        const fileChunks = await this.processContextFile(file);
+        const { chunks: fileChunks, metadata } = await this.processContextFile(file);
         chunks.push(...fileChunks);
         totalChunks += fileChunks.length;
         
-        processedFiles.push({
-          path: file.path,
+        processedFiles[file.path] = {
           chunks: fileChunks.length,
-          size: file.size
-        });
+          size: file.size,
+          metadata: metadata || {},
+        };
         
         console.log(chalk.gray(`   📝 ${file.path} → ${fileChunks.length} chunks`));
         
@@ -186,7 +187,7 @@ class ProjectContextIndexer {
         created: new Date().toISOString(),
         version: '0.2.0',
         context_type: 'project_context',
-        total_files: processedFiles.length,
+        total_files: Object.keys(processedFiles).length,
         total_chunks: totalChunks
       },
       chunks: chunks,
@@ -194,7 +195,7 @@ class ProjectContextIndexer {
     };
     
     return {
-      indexed_files: processedFiles.length,
+      indexed_files: Object.keys(processedFiles).length,
       total_chunks: totalChunks,
       index_data: indexData
     };
@@ -205,11 +206,13 @@ class ProjectContextIndexer {
    */
   async processContextFile(fileInfo) {
     try {
-      const content = fs.readFileSync(fileInfo.path, 'utf8');
-      return this.chunkContent(content, fileInfo);
+      const fileContent = fs.readFileSync(fileInfo.path, 'utf8');
+      const { data: metadata, content } = matter(fileContent);
+      const chunks = this.chunkContent(content, fileInfo);
+      return { chunks, metadata };
     } catch (error) {
       console.warn(chalk.yellow(`Warning: Could not read file ${fileInfo.path}: ${error.message}`));
-      return [];
+      return { chunks: [], metadata: {} };
     }
   }
   

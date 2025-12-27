@@ -57,6 +57,21 @@ async function loadConfig(options = {}) {
       }
     }
 
+    // Apply default values if not present
+    if (config.search.similarity_threshold === undefined) {
+      config.search.similarity_threshold = 0.01; // Default value
+    }
+
+    // Handoff-AI integration defaults
+    if (!config.handoff_ai) {
+      config.handoff_ai = {
+        enabled: false,
+        api_endpoint: 'http://localhost:8080/api/knowledge', // Placeholder
+        api_key: null, // Placeholder
+        knowledge_base_type: 'structured_data' // e.g., 'structured_data', 'graph_db'
+      };
+    }
+
     return config;
     
   } catch (error) {

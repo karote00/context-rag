@@ -70,16 +70,66 @@ class SearchService {
     }
 
     const topK = options.topK || this.config.search.top_k || 5;
+    const filters = options.filters || {};
     
     console.log(chalk.blue(`🔍 Searching for: "${query}"`));
+
+    let combinedResults = [];
+
+    // Step 1: Query Handoff-AI knowledge base if enabled
+    // Removed Handoff-AI integration as per user's request for standalone project.
+    // This section is intentionally left out.
+
+    // Step 2: Perform local index search
+    const hasActiveFilters = Object.values(filters).some(f => f !== undefined && f !== '' && (Array.isArray(f) ? f.length > 0 : true));
+
+    const allChunks = this.indexData.chunks;
+    const filteredChunks = allChunks.filter(chunk => {
+      const fileMeta = this.indexData.files[chunk.file_path]?.metadata;
+      
+      if (!hasActiveFilters) {
+        return true; // No filters, keep all chunks
+      }
+
+      if (!fileMeta) {
+        return false; // Filters are active, but file has no metadata, so filter it out
+      }
+
+      // Feature filter (AND)
+      if (filters.feature && fileMeta.feature !== filters.feature) {
+        return false;
+      }
+
+      // Type filter (AND)
+      if (filters.type && fileMeta.type !== filters.type) {
+        return false;
+      }
+
+      // Tags filter (AND with internal OR)
+      if (filters.tags && filters.tags.length > 0) {
+        if (!fileMeta.tags || !Array.isArray(fileMeta.tags)) {
+          return false; // File has no tags, so it can't match
+        }
+        const hasMatchingTag = fileMeta.tags.some(fileTag => filters.tags.includes(fileTag));
+        if (!hasMatchingTag) {
+          return false;
+        }
+      }
+
+      return true; // Chunk passes all filters
+    });
+
+    if (hasActiveFilters) {
+      console.log(chalk.gray(`🔬 Applied filters, searching over ${filteredChunks.length} chunks (out of ${allChunks.length})`));
+    }
     
     // Generate query embedding
     const queryEmbedding = await this.embeddingService.embedText(query);
     
     // Calculate similarities
-    const results = [];
+    const localResults = [];
     
-    for (const chunk of this.indexData.chunks) {
+    for (const chunk of filteredChunks) {
       if (!chunk.embedding) {
         // Skip chunks without embeddings
         continue;
@@ -87,7 +137,7 @@ class SearchService {
       
       const similarity = this.cosineSimilarity(queryEmbedding, chunk.embedding);
       
-      results.push({
+      localResults.push({
         file_path: chunk.file_path,
         content: chunk.content,
         chunk_index: chunk.chunk_index,
@@ -97,25 +147,32 @@ class SearchService {
     }
     
     // Sort by similarity and take top K
-    results.sort((a, b) => b.similarity - a.similarity);
-    let topResults = results.slice(0, topK * 2); // Get more results for context filtering
+    localResults.sort((a, b) => b.similarity - a.similarity);
+    let topLocalResults = localResults.slice(0, topK * 2); // Get more results for context filtering
     
     // Filter out very low similarity results (more lenient for Node.js embedder)
     const engine = await this.embeddingService.detectEmbeddingEngine();
-    const similarityThreshold = engine === 'nodejs' ? 0.01 : 0.1;
-    topResults = topResults.filter(result => result.similarity > similarityThreshold);
+    const defaultSimilarityThreshold = engine === 'nodejs' ? 0.01 : 0.1;
+    const similarityThreshold = this.config.search.similarity_threshold !== undefined
+      ? this.config.search.similarity_threshold
+      : defaultSimilarityThreshold;
+    topLocalResults = topLocalResults.filter(result => result.similarity > similarityThreshold);
     
     // Apply context-aware filtering if project context is available
     if (this.indexData.context_metadata) {
       console.log(chalk.gray('🎯 Applying context-aware search filtering'));
-      topResults = await this.contextService.searchContext(query, topResults, Math.ceil(topK * 0.6));
+      topLocalResults = await this.contextService.searchContext(query, topLocalResults, Math.ceil(topK * 0.6));
     }
     
     // Enhance results with context information
-    const enhancedResults = await this.contextService.enhanceSearchResults(topResults);
+    const enhancedLocalResults = await this.contextService.enhanceSearchResults(topLocalResults);
     
+    // Combine and re-sort all results
+    combinedResults.push(...enhancedLocalResults);
+    combinedResults.sort((a, b) => (b.priority_score || b.similarity) - (a.priority_score || a.similarity));
+
     // Take final top K results
-    const finalResults = enhancedResults.slice(0, topK);
+    const finalResults = combinedResults.slice(0, topK);
     
     return finalResults;
   }
