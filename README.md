@@ -20,7 +20,7 @@ A lightweight CLI tool that helps AI agents understand your project by providing
 - **🎛️ Interactive Setup**: Choose your preferred engine with smart validation and guidance
 - **🚀 Cascading Performance**: Rust → Python → Node.js with availability checking
 - **📚 Smart Context**: Auto-detects organized documentation, works with any structure
-- **🎯 Smart Integration**: Auto-detects docs/, and other context directories
+- **🎯 Smart Integration**: Detects docs/, and other context directories automatically
 - **🌿 Branch-Aware**: Automatic git branch detection and caching
 - **🛡️ Branch Safety**: Prevents indexing mistakes with smart baseline enforcement
 - **⚡ Multi-Engine Support**: Rust → Python → Python-Fast → Node.js with intelligent fallbacks
@@ -182,7 +182,7 @@ context-rag init
 ```
 
 **Smart Detection Features:**
-- **Auto-detects**: `docs/`, `.docs/`, `context/` directories
+- **Context Discovery**: `docs/`, `context/`, and other documentation directories
 - **Flexible Configuration**: Customize include/exclude paths in config
 - **Works Everywhere**: Functions with any project structure
 - **Optimization Tips**: Suggests improvements without blocking setup
