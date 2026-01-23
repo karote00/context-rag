@@ -5,10 +5,10 @@ const chalk = require('chalk');
 class ContextService {
   constructor(config) {
     this.config = config;
-    this.contextPath = '.project';
+    this.contextPath = 'docs';
     this.contextTypes = [
       'architecture',
-      'golden-path', 
+      'golden-path',
       'design-principles',
       'constraints',
       'requirements',
@@ -23,15 +23,15 @@ class ContextService {
     }
 
     const contextFiles = [];
-    
+
     try {
       const entries = fs.readdirSync(this.contextPath, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         if (entry.isFile() && entry.name.endsWith('.md')) {
           const contextType = this.identifyContextType(entry.name);
           const filePath = path.join(this.contextPath, entry.name);
-          
+
           contextFiles.push({
             type: contextType,
             name: entry.name,
@@ -40,7 +40,7 @@ class ContextService {
           });
         }
       }
-      
+
       if (contextFiles.length > 0) {
         console.log(chalk.blue(`🎯 Detected project context with ${contextFiles.length} files`));
         return {
@@ -49,23 +49,23 @@ class ContextService {
           totalFiles: contextFiles.length
         };
       }
-      
+
     } catch (error) {
       console.warn(chalk.yellow(`⚠️  Could not scan context directory: ${error.message}`));
     }
-    
+
     return null;
   }
 
   identifyContextType(filename) {
     const name = filename.toLowerCase().replace('.md', '');
-    
+
     for (const type of this.contextTypes) {
       if (name.includes(type) || name.includes(type.replace('-', '_'))) {
         return type;
       }
     }
-    
+
     // Try to infer from common patterns
     if (name.includes('arch')) return 'architecture';
     if (name.includes('golden') || name.includes('path')) return 'golden-path';
@@ -74,22 +74,22 @@ class ContextService {
     if (name.includes('requirement') || name.includes('spec')) return 'requirements';
     if (name.includes('api') || name.includes('endpoint')) return 'api-specs';
     if (name.includes('data') || name.includes('model') || name.includes('schema')) return 'data-models';
-    
+
     return 'general';
   }
 
   async indexContextFiles(indexer) {
     const contextInfo = await this.detectProjectContext();
-    
+
     if (!contextInfo) {
       return null;
     }
 
     console.log(chalk.blue('🎯 Indexing project context files...'));
-    
+
     const contextChunks = [];
     let totalChunks = 0;
-    
+
     for (const contextFile of contextInfo.files) {
       try {
         const content = fs.readFileSync(contextFile.path, 'utf8');
@@ -97,7 +97,7 @@ class ContextService {
         const crypto = require('crypto');
         const fileHash = crypto.createHash('sha256').update(content).digest('hex');
         const stats = fs.statSync(contextFile.path);
-        
+
         chunks.forEach((chunk, index) => {
           contextChunks.push({
             file_path: contextFile.path,
@@ -111,16 +111,16 @@ class ContextService {
           });
           totalChunks++;
         });
-        
+
         console.log(chalk.gray(`   📄 ${contextFile.name} (${contextFile.type}): ${chunks.length} chunks`));
-        
+
       } catch (error) {
         console.warn(chalk.yellow(`⚠️  Could not process ${contextFile.path}: ${error.message}`));
       }
     }
-    
+
     console.log(chalk.green(`✅ Indexed ${totalChunks} context chunks from ${contextInfo.files.length} files`));
-    
+
     return {
       chunks: contextChunks,
       metadata: {
@@ -144,7 +144,7 @@ class ContextService {
       'data-models': 4,
       'general': 3
     };
-    
+
     return priorities[contextType] || 3;
   }
 
@@ -152,27 +152,27 @@ class ContextService {
     // Filter results to prioritize context files
     const contextResults = allResults.filter(result => result.is_context);
     const regularResults = allResults.filter(result => !result.is_context);
-    
+
     if (contextResults.length === 0) {
       return allResults; // No context available, return regular results
     }
-    
+
     // Sort context results by priority and similarity
     contextResults.sort((a, b) => {
       const priorityDiff = (b.priority || 0) - (a.priority || 0);
       if (priorityDiff !== 0) return priorityDiff;
       return b.similarity - a.similarity;
     });
-    
+
     // Take top context results and mix with regular results
     const topContextResults = contextResults.slice(0, maxContextResults);
     const remainingSlots = Math.max(0, allResults.length - topContextResults.length);
     const topRegularResults = regularResults.slice(0, remainingSlots);
-    
+
     // Combine and sort by similarity
     const combinedResults = [...topContextResults, ...topRegularResults];
     combinedResults.sort((a, b) => b.similarity - a.similarity);
-    
+
     return combinedResults;
   }
 
@@ -201,7 +201,7 @@ class ContextService {
     if (contextResults.length === 0) {
       return null;
     }
-    
+
     const contextTypes = [...new Set(contextResults.map(r => r.context_type))];
     const summary = {
       total_context_results: contextResults.length,
@@ -209,7 +209,7 @@ class ContextService {
       top_context_type: contextTypes[0],
       context_coverage: contextTypes.length / this.contextTypes.length
     };
-    
+
     return summary;
   }
 }

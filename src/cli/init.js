@@ -36,23 +36,22 @@ User: "how does authentication work?"
 `;
 
 function detectProjectContext() {
-  // Check for .project directory (handoff-ai or similar)
-  if (fs.existsSync('.project') && fs.statSync('.project').isDirectory()) {
-    const projectFiles = fs.readdirSync('.project');
-    const hasContext = projectFiles.some(file => 
-      file.includes('context') || 
-      file.includes('overview') || 
+  // Check for docs directory (handoff-ai and general documentation)
+  if (fs.existsSync('docs') && fs.statSync('docs').isDirectory()) {
+    const docsFiles = fs.readdirSync('docs');
+    const hasContext = docsFiles.some(file =>
+      file.includes('context') ||
+      file.includes('overview') ||
       file.includes('architecture') ||
       file.endsWith('.md')
     );
     if (hasContext) {
-      return { type: 'handoff-ai', path: '.project/' };
+      return { type: 'docs', path: 'docs/' };
     }
   }
 
   // Check for other common context directories
   const commonContextDirs = [
-    { path: 'docs/', name: 'documentation' },
     { path: '.docs/', name: 'hidden docs' },
     { path: 'context/', name: 'context directory' },
     { path: '.context/', name: 'hidden context' }
@@ -100,7 +99,7 @@ async function checkEngineAvailability(engineType) {
   const { promisify } = require('util');
   const exec = require('child_process').exec;
   const execAsync = promisify(exec);
-  
+
   try {
     switch (engineType) {
       case 'rust':
@@ -110,8 +109,8 @@ async function checkEngineAvailability(engineType) {
         if (fs.existsSync(rustEmbedderPath)) {
           return { available: true, message: 'Rust embedder ready' };
         } else {
-          return { 
-            available: false, 
+          return {
+            available: false,
             message: 'Rust toolchain found but embedder not compiled',
             suggestion: 'Run: cargo build --release'
           };
@@ -127,8 +126,8 @@ async function checkEngineAvailability(engineType) {
   } catch (error) {
     switch (engineType) {
       case 'rust':
-        return { 
-          available: false, 
+        return {
+          available: false,
           message: 'Rust not installed',
           suggestion: 'Install Rust: curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh',
           fallback: 'You can use Python or Node.js instead for now'
@@ -136,14 +135,14 @@ async function checkEngineAvailability(engineType) {
       case 'python-fast':
         try {
           await execAsync('python3 --version');
-          return { 
-            available: false, 
+          return {
+            available: false,
             message: 'Python not installed',
             suggestion: 'Install Python: https://python.org/downloads'
           };
         } catch {
-          return { 
-            available: false, 
+          return {
+            available: false,
             message: 'Python not installed',
             suggestion: 'Install Python: https://python.org/downloads',
             fallback: 'You can use Node.js fallback for now'
@@ -180,7 +179,7 @@ function createConfig(contextInfo, embedderChoice) {
   const contextConfig = {
     include: [
       ".project/",
-      "docs/", 
+      "docs/",
       "README.md",
       "ARCHITECTURE.md"
     ],
@@ -217,7 +216,7 @@ function updateGitignore(embedderChoice) {
     '# Context-RAG cache and data',
     '.context-rag/',
   ];
-  
+
   // Add engine-specific entries
   if (embedderChoice === 'rust') {
     contextRagEntries.push('');
@@ -225,16 +224,16 @@ function updateGitignore(embedderChoice) {
     contextRagEntries.push('target/');
     contextRagEntries.push('Cargo.lock');
   }
-  
+
   contextRagEntries.push('');
-  
+
   let gitignoreContent = '';
   let needsUpdate = false;
-  
+
   // Read existing .gitignore if it exists
   if (fs.existsSync(gitignorePath)) {
     gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
-    
+
     // Check if .context-rag/ is already ignored
     if (!gitignoreContent.includes('.context-rag/')) {
       needsUpdate = true;
@@ -243,12 +242,12 @@ function updateGitignore(embedderChoice) {
     // Create new .gitignore
     needsUpdate = true;
   }
-  
+
   if (needsUpdate) {
     // Add context-rag entries to .gitignore
     const updatedContent = gitignoreContent + contextRagEntries.join('\n');
     fs.writeFileSync(gitignorePath, updatedContent);
-    
+
     if (embedderChoice === 'rust') {
       console.log(chalk.green('Updated .gitignore to exclude .context-rag/ and Rust build artifacts'));
     } else {
@@ -261,7 +260,7 @@ function updateGitignore(embedderChoice) {
 
 function createToolManifest() {
   const toolManifestPath = '.context-rag/tool-info.json';
-  
+
   const toolInfo = {
     name: 'context-rag',
     version: require('../../package.json').version,
@@ -269,7 +268,7 @@ function createToolManifest() {
     command: 'context-rag ai',
     purpose: 'AI agents call this to get relevant project context instead of sending entire codebase'
   };
-  
+
   fs.writeFileSync(toolManifestPath, JSON.stringify(toolInfo, null, 2));
   console.log(chalk.green('Created tool info for AI integration'));
 }
@@ -278,7 +277,7 @@ async function initCommand(options = {}) {
   const configPath = '.context-rag.config.json';
   const cacheDir = '.context-rag';
   const jsonOutput = options.json;
-  
+
   try {
     // Check if config already exists
     if (fs.existsSync(configPath)) {
@@ -295,43 +294,43 @@ async function initCommand(options = {}) {
 
     // Detect organized project context
     const contextInfo = detectProjectContext();
-    
+
     if (!contextInfo) {
       // No organized context found - just inform, don't require action
       console.log(chalk.yellow('⚠️  No organized project context found'));
-      console.log(chalk.gray('Consider creating .project/ directory with project documentation'));
+      console.log(chalk.gray('Consider creating docs/ directory with project documentation'));
       console.log(chalk.gray('You can modify "include" paths in .context-rag.config.json'));
     }
 
     // Ask user to choose embedding engine
     console.log(chalk.blue('\n🔧 Choose your embedding engine:'));
     const engineChoices = [
-      { 
-        value: 'rust', 
-        name: 'Rust', 
-        description: 'Recommended' 
+      {
+        value: 'rust',
+        name: 'Rust',
+        description: 'Recommended'
       },
-      { 
-        value: 'python-fast', 
-        name: 'Python-Fast', 
-        description: 'Lightweight embeddings' 
+      {
+        value: 'python-fast',
+        name: 'Python-Fast',
+        description: 'Lightweight embeddings'
       },
-      { 
-        value: 'nodejs', 
-        name: 'Node.js', 
-        description: 'Always available' 
+      {
+        value: 'nodejs',
+        name: 'Node.js',
+        description: 'Always available'
       }
     ];
 
     const chosenEngine = await promptUserChoice('Which embedding engine would you like to use?', engineChoices);
-    
+
     // Check if chosen engine is available
     console.log(chalk.gray(`\nChecking ${chosenEngine.name} availability...`));
     const availability = await checkEngineAvailability(chosenEngine.value);
-    
+
     // Store the action required for exit code determination
     let actionRequired = false;
-    
+
     if (availability.available) {
       console.log(chalk.green(`✅ ${chosenEngine.name} is ready`));
     } else {
@@ -341,14 +340,14 @@ async function initCommand(options = {}) {
 
     // Create configuration
     const config = createConfig(contextInfo, chosenEngine.value);
-    
+
     // Write configuration
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
     console.log(chalk.green(`\nCreated configuration file: ${configPath}`));
-    
+
     if (contextInfo) {
-      if (contextInfo.type === 'handoff-ai') {
-        console.log(chalk.green('✅ Handoff-AI context detected'));
+      if (contextInfo.type === 'docs') {
+        console.log(chalk.green('✅ Documentation context detected'));
       } else {
         console.log(chalk.green(`✅ Organized context detected: ${contextInfo.name}`));
       }
@@ -373,7 +372,7 @@ async function initCommand(options = {}) {
     let exitCode = 0;
     let status = 'success';
     let actions = [];
-    
+
     if (!availability.available && availability.suggestion) {
       actions.push({
         type: 'install_engine',
@@ -381,12 +380,12 @@ async function initCommand(options = {}) {
         description: `Install ${chosenEngine.name} engine`
       });
     }
-    
+
     if (actions.length > 0) {
       exitCode = 2; // Success with action required
       status = 'action_required';
     }
-    
+
     if (jsonOutput) {
       // JSON output for AI agents
       const result = {
@@ -422,10 +421,10 @@ async function initCommand(options = {}) {
         console.log(chalk.gray('\nAfter installation, run: context-rag index'));
       }
     }
-    
+
     // Exit with appropriate code for AI agents
     process.exit(exitCode);
-    
+
   } catch (error) {
     console.error(chalk.red('Error during initialization:'), error.message);
     process.exit(1);

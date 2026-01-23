@@ -11,41 +11,41 @@ class ProjectContextIndexer {
   constructor(config = {}) {
     this.config = config;
   }
-  
+
   /**
    * Index project context files for main branch
    * @returns {Object} Indexing results
    */
   async indexProjectContext() {
     console.log(chalk.blue('📚 Indexing project context (main branch)...'));
-    
+
     const startTime = Date.now();
-    
+
     // Get context paths from config
     const contextPaths = this.getContextPaths();
     const contextFiles = await this.discoverContextFiles(contextPaths);
-    
+
     if (contextFiles.length === 0) {
       console.log(chalk.yellow('⚠️  No project context files found'));
-      console.log(chalk.gray('Consider adding docs/, .project/, README.md'));
+      console.log(chalk.gray('Consider adding docs/, README.md'));
       return this.createEmptyResult();
     }
-    
+
     // Process context files
     const indexResult = await this.processContextFiles(contextFiles);
-    
+
     const endTime = Date.now();
     const processingTime = endTime - startTime;
-    
+
     console.log(chalk.green(`✅ Project context indexing completed in ${processingTime}ms`));
-    
+
     return {
       ...indexResult,
       context_type: 'project_context',
       processing_time_ms: processingTime
     };
   }
-  
+
   /**
    * Get context paths from config
    */
@@ -53,26 +53,26 @@ class ProjectContextIndexer {
     if (this.config.context && this.config.context.include) {
       return this.config.context.include;
     }
-    
+
     // Default project context paths
     return [
-      '.project/',
+      'docs/',
       'docs/',
       'README.md',
       'ARCHITECTURE.md'
     ];
   }
-  
+
   /**
    * Discover context files in specified paths
    */
   async discoverContextFiles(contextPaths) {
     const files = [];
-    
+
     for (const contextPath of contextPaths) {
       if (fs.existsSync(contextPath)) {
         const stat = fs.statSync(contextPath);
-        
+
         if (stat.isDirectory()) {
           const dirFiles = await this.scanDirectory(contextPath);
           files.push(...dirFiles);
@@ -86,26 +86,26 @@ class ProjectContextIndexer {
         }
       }
     }
-    
+
     return files;
   }
-  
+
   /**
    * Scan directory for context files
    */
   async scanDirectory(dirPath) {
     const files = [];
-    
+
     try {
       const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dirPath, entry.name);
-        
+
         if (entry.isDirectory()) {
           // Skip excluded directories
           if (this.shouldExclude(entry.name)) continue;
-          
+
           const subFiles = await this.scanDirectory(fullPath);
           files.push(...subFiles);
         } else if (entry.isFile() && this.isContextFile(entry.name)) {
@@ -120,10 +120,10 @@ class ProjectContextIndexer {
     } catch (error) {
       console.warn(chalk.yellow(`Warning: Could not scan directory ${dirPath}: ${error.message}`));
     }
-    
+
     return files;
   }
-  
+
   /**
    * Check if file should be excluded
    */
@@ -134,24 +134,24 @@ class ProjectContextIndexer {
       'dist',
       'build'
     ];
-    
-    return excludePatterns.some(pattern => 
+
+    return excludePatterns.some(pattern =>
       fileName.includes(pattern.replace('*', ''))
     );
   }
-  
+
   /**
    * Check if file is a context file
    */
   isContextFile(fileName) {
     if (this.shouldExclude(fileName)) return false;
-    
+
     const ext = path.extname(fileName).toLowerCase();
     const contextExtensions = ['.md', '.txt', '.yaml', '.yml', '.json'];
-    
+
     return contextExtensions.includes(ext);
   }
-  
+
   /**
    * Process context files into chunks
    */
@@ -159,28 +159,28 @@ class ProjectContextIndexer {
     const chunks = [];
     const processedFiles = {}; // Use an object with path as key
     let totalChunks = 0;
-    
+
     console.log(chalk.blue(`📄 Processing ${contextFiles.length} project context files...`));
-    
+
     for (const file of contextFiles) {
       try {
         const { chunks: fileChunks, metadata } = await this.processContextFile(file);
         chunks.push(...fileChunks);
         totalChunks += fileChunks.length;
-        
+
         processedFiles[file.path] = {
           chunks: fileChunks.length,
           size: file.size,
           metadata: metadata || {},
         };
-        
+
         console.log(chalk.gray(`   📝 ${file.path} → ${fileChunks.length} chunks`));
-        
+
       } catch (error) {
         console.warn(chalk.yellow(`Warning: Could not process ${file.path}: ${error.message}`));
       }
     }
-    
+
     // Create index structure
     const indexData = {
       metadata: {
@@ -193,14 +193,14 @@ class ProjectContextIndexer {
       chunks: chunks,
       files: processedFiles
     };
-    
+
     return {
       indexed_files: Object.keys(processedFiles).length,
       total_chunks: totalChunks,
       index_data: indexData
     };
   }
-  
+
   /**
    * Process a single context file
    */
@@ -215,47 +215,47 @@ class ProjectContextIndexer {
       return { chunks: [], metadata: {} };
     }
   }
-  
+
   /**
    * Chunk content into searchable pieces
    */
   chunkContent(content, fileInfo) {
     const chunks = [];
-    
+
     // Split by major sections (## headers)
     const sections = content.split(/^## /m);
-    
+
     for (let i = 0; i < sections.length; i++) {
       const section = i === 0 ? sections[i] : '## ' + sections[i];
-      
+
       if (section.trim().length > 50) {
         chunks.push(this.createChunk(section, fileInfo, i));
       }
     }
-    
+
     // If no sections, chunk by paragraphs
     if (chunks.length === 0) {
       chunks.push(...this.chunkByParagraphs(content, fileInfo));
     }
-    
+
     return chunks;
   }
-  
+
   /**
    * Chunk by paragraphs
    */
   chunkByParagraphs(content, fileInfo) {
     const chunks = [];
     const paragraphs = content.split(/\n\s*\n/);
-    
+
     let currentChunk = '';
     let chunkIndex = 0;
-    
+
     for (const paragraph of paragraphs) {
       const trimmedParagraph = paragraph.trim();
-      
+
       if (trimmedParagraph.length === 0) continue;
-      
+
       if (currentChunk.length > 0 && (currentChunk.length + trimmedParagraph.length) > 1000) {
         chunks.push(this.createChunk(currentChunk, fileInfo, chunkIndex));
         currentChunk = trimmedParagraph;
@@ -264,20 +264,20 @@ class ProjectContextIndexer {
         currentChunk += (currentChunk.length > 0 ? '\n\n' : '') + trimmedParagraph;
       }
     }
-    
+
     if (currentChunk.trim().length > 0) {
       chunks.push(this.createChunk(currentChunk, fileInfo, chunkIndex));
     }
-    
+
     return chunks;
   }
-  
+
   /**
    * Create a chunk object
    */
   createChunk(content, fileInfo, chunkIndex) {
     const snippet = this.generateSnippet(content);
-    
+
     return {
       file_path: fileInfo.path,
       content: content.trim(),
@@ -290,7 +290,7 @@ class ProjectContextIndexer {
       modified: fileInfo.modified.toISOString()
     };
   }
-  
+
   /**
    * Generate snippet from content
    */
@@ -298,18 +298,18 @@ class ProjectContextIndexer {
     const lines = content.split('\n');
     const maxLines = 3;
     const maxLength = 200;
-    
+
     let snippet = lines.slice(0, maxLines).join('\n');
-    
+
     if (snippet.length > maxLength) {
       snippet = snippet.substring(0, maxLength) + '...';
     } else if (lines.length > maxLines) {
       snippet += '...';
     }
-    
+
     return snippet.trim();
   }
-  
+
   /**
    * Create empty result when no files found
    */

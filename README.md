@@ -20,7 +20,7 @@ A lightweight CLI tool that helps AI agents understand your project by providing
 - **🎛️ Interactive Setup**: Choose your preferred engine with smart validation and guidance
 - **🚀 Cascading Performance**: Rust → Python → Node.js with availability checking
 - **📚 Smart Context**: Auto-detects organized documentation, works with any structure
-- **🎯 Smart Integration**: Auto-detects handoff-ai, docs/, and other context directories
+- **🎯 Smart Integration**: Auto-detects docs/, and other context directories
 - **🌿 Branch-Aware**: Automatic git branch detection and caching
 - **🛡️ Branch Safety**: Prevents indexing mistakes with smart baseline enforcement
 - **⚡ Multi-Engine Support**: Rust → Python → Python-Fast → Node.js with intelligent fallbacks
@@ -52,7 +52,7 @@ context-rag index         # Smart: run from main branch first for proper baselin
 ```
 
 **Smart Branch-Aware Setup:**
-- **Main Branch**: Indexes project context (docs/, .project/, README.md, architecture)
+- **Main Branch**: Indexes project context (docs/, README.md, architecture)
 - **Feature Branches**: Indexes implementation specs (.kiro/specs/, requirements/, design/)
 - **Engine Choice**: Choose Rust, Python, or Node.js with availability checking
 - **Auto-Configuration**: Separate context/specs paths with sensible defaults
@@ -170,19 +170,19 @@ Context-rag automatically detects and optimizes for organized project documentat
 ```bash
 # With organized context:
 context-rag init
-# ✅ Handoff-AI context detected
-# ✅ Rust is ready
+# ✅ Documentation context detected
+# ✅ Python is ready for fast embeddings
 # ✅ Context-RAG initialized successfully!
 
 # Without organized context:
 context-rag init
 # ⚠️  No organized project context found
-# Consider creating .project/ directory with project documentation
+# Consider creating docs/ directory with project documentation
 # ✅ Context-RAG initialized successfully!
 ```
 
 **Smart Detection Features:**
-- **Auto-detects**: `.project/`, `docs/`, `.docs/`, `context/` directories
+- **Auto-detects**: `docs/`, `.docs/`, `context/` directories
 - **Flexible Configuration**: Customize include/exclude paths in config
 - **Works Everywhere**: Functions with any project structure
 - **Optimization Tips**: Suggests improvements without blocking setup

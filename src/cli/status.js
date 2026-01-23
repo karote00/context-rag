@@ -11,7 +11,7 @@ async function statusCommand(options = {}) {
     }
 
     const apiService = new APIService(config);
-    
+
     // Get all status information
     const [indexStatus, branchInfo, contextInfo] = await Promise.all([
       apiService.getIndexStatus(),
@@ -51,7 +51,7 @@ async function statusCommand(options = {}) {
     if (branchInfo.current_branch) {
       console.log(chalk.green(`   📍 Current: ${branchInfo.current_branch}`));
       console.log(chalk.gray(`   📋 Cached branches: ${branchInfo.total_cached_branches}`));
-      
+
       if (branchInfo.has_changes) {
         console.log(chalk.yellow(`   🔄 Changed files: ${branchInfo.changed_files.length}`));
       } else {
@@ -64,26 +64,26 @@ async function statusCommand(options = {}) {
     // Check specs and project context
     const { SpecsMonitor } = require('../services/context-monitor');
     const { ProjectContextIndexer } = require('../services/project-context-indexer');
-    
+
     const specsMonitor = new SpecsMonitor(config);
     const projectContextIndexer = new ProjectContextIndexer(config);
-    
+
     const specsDiscovery = await specsMonitor.discoverContextFiles();
     const projectContextFiles = await projectContextIndexer.discoverContextFiles(
       projectContextIndexer.getContextPaths()
     );
-    
-    // Check for handoff-ai integration
-    const hasHandoffAI = require('fs').existsSync('.project') && 
-      require('fs').statSync('.project').isDirectory() &&
-      require('fs').readdirSync('.project').some(file => 
-        file.includes('context') || file.includes('overview') || 
+
+    // Check for docs integration (handoff-ai and general documentation)
+    const hasDocsContext = require('fs').existsSync('docs') &&
+      require('fs').statSync('docs').isDirectory() &&
+      require('fs').readdirSync('docs').some(file =>
+        file.includes('context') || file.includes('overview') ||
         file.includes('architecture') || file.endsWith('.md')
       );
 
     // Context & Specs Status
     console.log(chalk.cyan('\n🎯 Content Status:'));
-    
+
     // Project Context (main branch)
     if (projectContextFiles.length > 0) {
       console.log(chalk.green(`   📚 Project Context: ${projectContextFiles.length} files`));
@@ -96,9 +96,9 @@ async function statusCommand(options = {}) {
       }
     } else {
       console.log(chalk.yellow('   ⚠️  No project context files found'));
-      console.log(chalk.gray('      Configure context.include for docs/, .project/, README.md'));
+      console.log(chalk.gray('      Configure context.include for docs/, README.md'));
     }
-    
+
     // Specs (feature branches)
     if (specsDiscovery.totalFiles > 0) {
       console.log(chalk.green(`   📋 Feature Specs: ${specsDiscovery.totalFiles} files`));
@@ -110,9 +110,9 @@ async function statusCommand(options = {}) {
       console.log(chalk.yellow('   ⚠️  No specs files found'));
       console.log(chalk.gray('      Configure specs.include for .kiro/specs/, requirements/, design/'));
     }
-    
-    if (hasHandoffAI) {
-      console.log(chalk.green('   🤖 Handoff-AI integration detected'));
+
+    if (hasDocsContext) {
+      console.log(chalk.green('   📚 Documentation context detected'));
     }
 
     // Detect embedding engine
@@ -129,18 +129,18 @@ async function statusCommand(options = {}) {
 
     // Show recommendations
     console.log(chalk.blue('\n💡 Recommendations:'));
-    
+
     if (!indexStatus.cache_exists) {
       console.log(chalk.yellow('   • Run "context-rag index" to create your first index'));
     } else if (branchInfo.has_changes) {
       console.log(chalk.yellow('   • Run "context-rag index" to update index with recent changes'));
     }
-    
-    if (!contextInfo.has_context && !hasHandoffAI) {
-      console.log(chalk.gray('   • Consider using handoff-ai to generate .project/ context'));
-      console.log(chalk.gray('   • Or add structured context manually in .project/ folder'));
+
+    if (!contextInfo.has_context && !hasDocsContext) {
+      console.log(chalk.gray('   • Consider creating docs/ directory with project documentation'));
+      console.log(chalk.gray('   • Or add structured context manually in docs/ folder'));
     }
-    
+
     if (branchInfo.total_cached_branches > 5) {
       console.log(chalk.gray('   • Use "context-rag branch --list" to manage cached branches'));
     }
